@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from .print import info
 from .read import *
 from .lights import Lights1
 from .texture import Texture
@@ -74,10 +75,10 @@ class GfxData:
             data_type = read_u8(buffer, index)
             index += 1
             if data_type in DATA_TYPES:
-                print("%08X    %-16s " % (index - 1, DATA_TYPES[data_type]["name"]), end="")
+                info("%08X    %-16s " % (index - 1, DATA_TYPES[data_type]["name"]), end="")
                 index, name = DATA_TYPES[data_type]["read"](gfx, buffer, index)
-                print(name)
+                info(name)
             else:
-                print("%08X    [!] Unknown data type: %d" % (index - 1, data_type))
+                info("%08X    [!] Unknown data type: %d" % (index - 1, data_type))
                 break
         return gfx

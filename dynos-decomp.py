@@ -1,5 +1,6 @@
 import os, sys
-from src.commands import OPTIONS_TO_COMMANDS, usage, error, is_compressed
+from src.print import usage, error
+from src.commands import OPTIONS_TO_COMMANDS, is_compressed
 
 
 def main(argv: list[str]):

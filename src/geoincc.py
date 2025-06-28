@@ -1,4 +1,5 @@
 import os
+from .print import info
 from .gfxdata import GfxData
 
 
@@ -504,5 +505,5 @@ def write_geo_inc_c(dirpath: str, gfxdata: GfxData):
                         index += geo_command["size"]
                         break
                 else:
-                    print(geo_command["cmd"])
+                    info(geo_command["cmd"])
             geo_inc_c.write("};\n\n")

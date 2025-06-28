@@ -1,230 +1,432 @@
 import os
+from .gbi import *
+from .print import warning
 from .gfxdata import GfxData
 
 
-BODY_PARTS = [
-    "PANTS",
-    "SHIRT",
-    "GLOVES",
-    "SHOES",
-    "HAIR",
-    "SKIN",
-    "CAP",
-    "EMBLEM",
-]
+class GfxCtx:
+    def __init__(self, buffer: list):
+        self.buffer = buffer
+
+    def w(self, offset: int, index: int):
+        return self.buffer[2 * offset + index]
+
+    @property
+    def w0(self):
+        return self.w(0, 0)
+
+    @property
+    def w1(self):
+        return self.w(0, 1)
 
 
-# TODO: this is really bad, but works most of the time
-def write_display_list_words(models_inc_c, w0, w1):
-    cmd = ((w0 >> 24) & 0xFF)
+def bnot(x: int, bits: int) -> int:
+    mask = ((1 << bits) - 1)
+    return mask - (x & mask)
 
-    # gsSPDisplayList
-    if w0 == 0xDE000000:
-        return models_inc_c.write("    gsSPDisplayList(%s),\n" % (w1))
 
-    # gsSPEndDisplayList
-    if cmd == 0xDF:
-        return models_inc_c.write("    gsSPEndDisplayList(),\n")
+def get_pointer_and_offset(ptr: str) -> tuple[str, int]:
+    if isinstance(ptr, int):
+        return "NULL", 0
+    if "+" in ptr:
+        name, off = [x.strip() for x in ptr.split("+")]
+        return name, int(off)
+    return ptr.strip(), 0
 
-    # gsDPLoadSync
-    if cmd == 0xE6:
-        return models_inc_c.write("    gsDPLoadSync(),\n")
 
-    # gsDPPipeSync
-    if cmd == 0xE7:
-        return models_inc_c.write("    gsDPPipeSync(),\n")
+def build_params_from_flags(flags: int, flagdict: dict) -> str:
+    params = []
+    for flag, param in flagdict.items():
+        if (flags & flag) == flag:
+            params.append(param)
+            flags &= bnot(flag, 32)
+    if flags != 0:
+        params.append(f"0x{flags:X}")
+    return "|".join(params) if params else "0"
 
-    # gsDPTileSync
-    if cmd == 0xE8:
-        return models_inc_c.write("    gsDPTileSync(),\n")
 
-    # gsDPFullSync
-    if cmd == 0xE9:
-        return models_inc_c.write("    gsDPFullSync(),\n")
+#
+# RSP commands
+#
 
-    # gsSPVertex
-    if cmd == 0x01:
-        return models_inc_c.write("    gsSPVertex(%s, %d, %d),\n" % (
-            w1,
-            ((w0 >> 12) & 0xFF),
-            ((w0 >> 1) & 0x7F) - ((w0 >> 12) & 0xFF)
-        ))
+def g_noop(ctx: GfxCtx):
+    tag = ctx.w1
+    if tag == 0:
+        return "gsDPNoOp()", 0
+    return f"gsDPNoOpTag(0x{tag:X})", 0
 
-    # gsSP1Triangle
-    if cmd == 0x05:
-        return models_inc_c.write("    gsSP1Triangle(%d, %d, %d, 0x0),\n" % (
-            ((w0 >> 16) & 0xFF) // 2,
-            ((w0 >> 8) & 0xFF) // 2,
-            ((w0 >> 0) & 0xFF) // 2,
-        ))
+def g_setothermode(ctx: GfxCtx, op, shifts):
+    c88 = C(ctx.w0, 8, 8)
+    c08 = C(ctx.w0, 0, 8)
+    length = c08 + 1
+    shift = 32 - c88 - length
+    mode = ctx.w1
+    cmd = shifts.get(shift)
+    if cmd is not None:
+        const = cmd["consts"].get(mode, f"0x{mode:X}")
+        return f"{cmd['cmd']}({const})", 0
+    return f"gsSPSetOtherMode({op}, {shift}, {length}, 0x{mode:X})", 0
 
-    # gsSP2Triangles
-    if cmd == 0x06:
-        return models_inc_c.write("    gsSP2Triangles(%d, %d, %d, 0x0, %d, %d, %d, 0x0),\n" % (
-            ((w0 >> 16) & 0xFF) // 2,
-            ((w0 >> 8) & 0xFF) // 2,
-            ((w0 >> 0) & 0xFF) // 2,
-            ((w1 >> 16) & 0xFF) // 2,
-            ((w1 >> 8) & 0xFF) // 2,
-            ((w1 >> 0) & 0xFF) // 2,
-        ))
+def g_spnoop(ctx: GfxCtx):
+    return "gsSPNoOp()", 0
 
-    # gsSPSetGeometryMode
-    if cmd == 0xD9 and w1 != 0:
-        return models_inc_c.write("    gsSPSetGeometryMode(0x%08X),\n" % (
-            (w1 & 0xFFFFFFFF)
-        ))
+def g_enddl(ctx: GfxCtx):
+    return "gsSPEndDisplayList()", 0
 
-    # gsSPClearGeometryMode
-    if cmd == 0xD9 and w1 == 0:
-        return models_inc_c.write("    gsSPClearGeometryMode(0x%08X),\n" % (
-            (~w0 & 0xFFFFFFFF)
-        ))
+def g_dl(ctx: GfxCtx):
+    branch = C(ctx.w0, 16, 8)
+    dl = ctx.w1
+    if branch == 1:
+        return f"gsSPBranchList({dl})", 0
+    return f"gsSPDisplayList({dl})", 0
 
-    # gsDPSetCombine
-    if cmd == 0xFC:
-        return models_inc_c.write("    gsDPSetCombine(0x%08X, 0x%08X),\n" % (
-            (w0 & 0x00FFFFFF),
-            (w1 & 0xFFFFFFFF)
-        ))
+def g_movemem(ctx: GfxCtx):
+    idx = C(ctx.w0, 0, 8)
+    if idx == G_MV_VIEWPORT:
+        return f"gsSPViewport({ctx.w1})", 0
+    if idx == G_MV_LIGHT:
+        light, offset = get_pointer_and_offset(ctx.w1)
+        lightidx = (C(ctx.w0, 8, 8) * 8) // 24 - 1
+        return f"gsSPLight(&{light}.{'l' if offset == 1 else 'a'}, {lightidx})", 0
+    adrs = ctx.w1
+    length = C(ctx.w0, 19, 5) * 8 + 1
+    ofs = C(ctx.w0, 8, 8) * 8
+    return f"gsDma2p(G_MOVEMEM, {adrs}, {length}, {idx}, {ofs})", 0
 
-    # gsSPTexture
-    if cmd == 0xD7:
-        return models_inc_c.write("    gsSPTexture(0x%04X, 0x%04X, %d, %d, %d),\n" % (
-            ((w1 >> 16) & 0xFFFF),
-            ((w1 >> 0) & 0xFFFF),
-            ((w0 >> 11) & 0x7),
-            ((w0 >> 8) & 0x7),
-            ((w0 >> 1) & 0x7F)
-        ))
+def g_moveword(ctx: GfxCtx):
+    idx = C(ctx.w0, 16, 8)
+    if idx == G_MW_NUMLIGHT:
+        num_lights = ctx.w1 // 24
+        light, _ = get_pointer_and_offset(ctx.w(1, 1))
+        return f"gsSPSetLights{num_lights}({light})", num_lights + 1
+    elif idx == G_MW_FOG:
+        fm = C(ctx.w1, 16, 16)
+        fo = C(ctx.w1, 0, 16)
+        return f"gsSPFogFactor(0x{fm:X}, 0x{fo:X})", 0
+    offset = C(ctx.w0, 0, 16)
+    data = ctx.w1
+    return f"gsMoveWd({idx}, {offset}, {data})", 0
 
-    # gsDPSetEnvColor
-    if cmd == 0xFB:
-        return models_inc_c.write("    gsDPSetEnvColor(0x%02X, 0x%02X, 0x%02X, 0x%02X),\n" % (
-            ((w1 >> 24) & 0xFF),
-            ((w1 >> 16) & 0xFF),
-            ((w1 >> 8) & 0xFF),
-            ((w1 >> 0) & 0xFF),
-        ))
+def g_mtx(ctx: GfxCtx):
+    flags = C(ctx.w0, 0, 8) ^ G_MTX_PUSH
+    params = build_params_from_flags(flags, G_MTX_FLAGS)
+    mtx = ctx.w1
+    return f"gsSPMatrix({mtx}, {params})", 0
 
-    # gsDPSetPrimColor
-    if cmd == 0xFA:
-        return models_inc_c.write("    gsDPSetPrimColor(0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X),\n" % (
-            ((w0 >> 8) & 0xFF),
-            ((w0 >> 0) & 0xFF),
-            ((w1 >> 24) & 0xFF),
-            ((w1 >> 16) & 0xFF),
-            ((w1 >> 8) & 0xFF),
-            ((w1 >> 0) & 0xFF),
-        ))
+def g_geometrymode(ctx: GfxCtx):
+    set_flags = ctx.w1 & 0xFFFFFF
+    set_params = build_params_from_flags(set_flags, G_GEOMETRYMODE_FLAGS)
+    clr_flags = bnot(C(ctx.w0, 0, 24), 24) & 0xFFFFFF
+    clr_params = build_params_from_flags(clr_flags, G_GEOMETRYMODE_FLAGS)
+    if clr_flags == 0xFFFFFF:
+        return f"gsSPLoadGeometryMode({set_params})", 0
+    if set_flags == 0:
+        return f"gsSPClearGeometryMode({clr_params})", 0
+    if clr_flags == 0:
+        return f"gsSPSetGeometryMode({set_params})", 0
+    return f"gsSPGeometryMode({clr_params}, {set_params})", 0
 
-    # gsDPSetBlendColor
-    if cmd == 0xF9:
-        return models_inc_c.write("    gsDPSetBlendColor(0x%02X, 0x%02X, 0x%02X, 0x%02X),\n" % (
-            ((w1 >> 24) & 0xFF),
-            ((w1 >> 16) & 0xFF),
-            ((w1 >> 8) & 0xFF),
-            ((w1 >> 0) & 0xFF),
-        ))
+def g_popmtx(ctx: GfxCtx):
+    n = ctx.w1 // 64
+    return f"gsSPPopMatrix({n})", 0
 
-    # gsDPSetFogColor
-    if cmd == 0xF8:
-        return models_inc_c.write("    gsDPSetFogColor(0x%02X, 0x%02X, 0x%02X, 0x%02X),\n" % (
-            ((w1 >> 24) & 0xFF),
-            ((w1 >> 16) & 0xFF),
-            ((w1 >> 8) & 0xFF),
-            ((w1 >> 0) & 0xFF),
-        ))
+def g_texture(ctx: GfxCtx):
+    s = C(ctx.w1, 16, 16)
+    t = C(ctx.w1, 0, 16)
+    level = C(ctx.w0, 11, 3)
+    tile = C(ctx.w0, 8, 3)
+    tile_str = G_TEXTURE_TILES.get(tile, f"{tile}")
+    on = C(ctx.w0, 1, 7)
+    on_str = G_ON_OFF.get(on, f"{on}")
+    return f"gsSPTexture(0x{s:04X}, 0x{t:04X}, {level}, {tile_str}, {on_str})", 0
 
-    # gsDPSetFillColor
-    if cmd == 0xF7:
-        return models_inc_c.write("    gsDPSetFillColor(0x%08x),\n" % (
-            (w1 & 0xFFFFFFFF)
-        ))
+def g_copymem(ctx: GfxCtx):
+    src = (C(ctx.w0, 16, 8) * 8) // 24 - 1
+    dst = (C(ctx.w0, 8, 8) * 8) // 24 - 1
+    part = src // 2 - 1
+    part_str = G_COPYMEM_BODY_PARTS.get(part, f"{part}")
+    if C(ctx.w(1, 0), 24, 8) == G_COPYMEM:
+        return f"gsSPCopyLightsPlayerPart({part_str})", 1
+    sub_part = 1 + (src + 1) % 2
+    return f"gsSPCopyLightEXT({dst}, ((2 * (({part_str}) + 1)) + {sub_part}))", 0
 
-    # gsDPSetTextureImage
-    if cmd == 0xFD:
-        return models_inc_c.write("    gsDPSetTextureImage(%d, %d, %d, %s),\n" % (
-            ((w0 >> 21) & 0x7),
-            ((w0 >> 19) & 0x3),
-            ((w0 >> 0) & 0xFFF) + 1,
-            w1
-        ))
+def g_vtx(ctx: GfxCtx):
+    v = ctx.w1
+    n = C(ctx.w0, 12, 8)
+    v0 = C(ctx.w0, 1, 7) - n
+    return f"gsSPVertex({v}, {n}, {v0})", 0
 
-    # gsDPLoadTile
-    if cmd == 0xF4:
-        return models_inc_c.write("    gsDPLoadTile(%d, %d, %d, %d, %d),\n" % (
-            ((w1 >> 24) & 0x7),
-            ((w0 >> 12) & 0xFFF),
-            ((w0 >> 0) & 0xFFF),
-            ((w1 >> 12) & 0xFFF),
-            ((w1 >> 0) & 0xFFF),
-        ))
+def g_tri1(ctx: GfxCtx):
+    v0 = C(ctx.w0, 16, 8) // 2
+    v1 = C(ctx.w0, 8, 8) // 2
+    v2 = C(ctx.w0, 0, 8) // 2
+    return f"gsSP1Triangle({v0}, {v1}, {v2}, 0x0)", 0
 
-    # gsDPSetTile
-    if cmd == 0xF5:
-        return models_inc_c.write("    gsDPSetTile(%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d),\n" % (
-            ((w0 >> 21) & 0x7),
-            ((w0 >> 19) & 0x3),
-            ((w0 >> 9) & 0x1FF),
-            ((w0 >> 0) & 0x1FF),
-            ((w1 >> 24) & 0x7),
-            ((w1 >> 20) & 0xF),
-            ((w1 >> 18) & 0x3),
-            ((w1 >> 14) & 0xF),
-            ((w1 >> 10) & 0xF),
-            ((w1 >> 8) & 0x3),
-            ((w1 >> 4) & 0xF),
-            ((w1 >> 0) & 0xF),
-        ))
+def g_tri2(ctx: GfxCtx):
+    v00 = C(ctx.w0, 16, 8) // 2
+    v01 = C(ctx.w0, 8, 8) // 2
+    v02 = C(ctx.w0, 0, 8) // 2
+    v10 = C(ctx.w1, 16, 8) // 2
+    v11 = C(ctx.w1, 8, 8) // 2
+    v12 = C(ctx.w1, 0, 8) // 2
+    return f"gsSP2Triangles({v00}, {v01}, {v02}, 0x0, {v10}, {v11}, {v12}, 0x0)", 0
 
-    # gsDPSetTileSize
-    if cmd == 0xF2:
-        return models_inc_c.write("    gsDPSetTileSize(%d, %d, %d, %d, %d),\n" % (
-            ((w1 >> 24) & 0x7),
-            ((w0 >> 12) & 0xFFF),
-            ((w0 >> 0) & 0xFFF),
-            ((w1 >> 12) & 0xFFF),
-            ((w1 >> 0) & 0xFFF),
-        ))
+#
+# RDP commands
+#
 
-    # gsDPLoadBlock
-    if cmd == 0xF3:
-        return models_inc_c.write("    gsDPLoadBlock(%d, %d, %d, %d, %d),\n" % (
-            ((w1 >> 24) & 0x7),
-            ((w0 >> 12) & 0xFFF),
-            ((w0 >> 0) & 0xFFF),
-            ((w1 >> 12) & 0xFFF),
-            ((w1 >> 0) & 0xFFF),
-        ))
+def get_cc(combiners: dict, v: int, bits: int):
+    comb = combiners.get(v)
+    if comb is None or v >= ((1 << bits) - 1):
+        return "0"
+    return comb
 
-    # gsSPCopyLightEXT
-    if cmd == 0xD2:
-        dst = (((((w0 >> 8) & 0xFF) * 8) - 24) // 24)
-        src = (((((w0 >> 16) & 0xFF) * 8) - 24) // 24)
-        part = (((src - dst) // 2) - 1)
-        return models_inc_c.write("    gsSPCopyLightsPlayerPart(%s),\n" % (
-            BODY_PARTS[part],
-        )) if dst == 1 else None
+def g_setcombine(ctx: GfxCtx):
+    a0 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w0, 20, 4), 4)
+    b0 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w1, 28, 4), 4)
+    c0 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w0, 15, 5), 5)
+    d0 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w1, 15, 3), 3)
+    Aa0 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w0, 12, 3), 3)
+    Ab0 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w1, 12, 3), 3)
+    Ac0 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w0, 9, 3), 3)
+    Ad0 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w1, 9, 3), 3)
+    a1 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w0, 5, 4), 4)
+    b1 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w1, 24, 4), 4)
+    c1 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w0, 0, 5), 5)
+    d1 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w1, 6, 3), 3)
+    Aa1 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w1, 21, 3), 3)
+    Ab1 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w1, 3, 3), 3)
+    Ac1 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w1, 18, 3), 3)
+    Ad1 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w1, 0, 3), 3)
+    cycle1 = f"{a0}, {b0}, {c0}, {d0}, {Aa0}, {Ab0}, {Ac0}, {Ad0}"
+    cycle2 = f"{a1}, {b1}, {c1}, {d1}, {Aa1}, {Ab1}, {Ac1}, {Ad1}"
+    cm1 = G_SETCOMBINE_MODES.get(cycle1)
+    cm2 = G_SETCOMBINE_MODES.get(cycle2)
+    if cm1 and cm2:
+        return f"gsDPSetCombineMode({cm1}, {cm2})", 0
+    return f"gsDPSetCombineLERP({cycle1}, {cycle2})", 0
 
-    # gsSPSetLights1
-    if w0 == 0xDB020000:
-        return models_inc_c.write("    gsSPSetLights1(")
-    if w0 == 0xDC08060A:
-        return models_inc_c.write("%s),\n" % (w1[:max(0, w1.find(" +"))]))
-    if w0 == 0xDC08090A:
-        return None
+def get_setimg_params(ctx: GfxCtx):
+    fmt = C(ctx.w0, 21, 3)
+    fmt_str = G_SETIMG_FMT.get(fmt, f"{fmt}")
+    siz = C(ctx.w0, 19, 2)
+    siz_str = G_SETIMG_SIZ.get(siz, f"{siz}")
+    width = C(ctx.w0, 0, 12) + 1
+    img, _ = get_pointer_and_offset(ctx.w1)
+    return fmt_str, siz_str, width, img
 
-    # gsDPSetAlphaCompare(G_AC_NONE)
-    if w0 == 0xE2001E01:
-        return models_inc_c.write("    gsDPSetAlphaCompare(G_AC_NONE),\n")
+def g_setcimg(ctx: GfxCtx):
+    f, s, w, i = get_setimg_params(ctx)
+    return f"gsDPSetColorImage({f}, {s}, {w}, {i})", 0
 
-    # Raw with pointer
-    if isinstance(w1, str):
-        return models_inc_c.write("RAW_WORDS(0x%08X, %s),\n" % (w0, w1))
+def g_setzimg(ctx: GfxCtx):
+    f, s, w, i = get_setimg_params(ctx)
+    return f"gsDPSetDepthImage({i})", 0
 
-    # Raw
-    return models_inc_c.write("RAW_WORDS(0x%08X, 0x%08X),\n" % (w0, w1))
+def g_settimg(ctx: GfxCtx):
+    f, s, w, i = get_setimg_params(ctx)
+    return f"gsDPSetTextureImage({f}, {s}, {w}, {i})", 0
+
+def get_setcolor_params(ctx: GfxCtx):
+    color = C(ctx.w1, 0, 32)
+    r = C(color, 24, 8)
+    g = C(color, 16, 8)
+    b = C(color, 8, 8)
+    a = C(color, 0, 8)
+    return color, r, g, b, a
+
+def g_setenvcolor(ctx: GfxCtx):
+    _, r, g, b, a = get_setcolor_params(ctx)
+    return f"gsDPSetEnvColor({r}, {g}, {b}, {a})", 0
+
+def g_setprimcolor(ctx: GfxCtx):
+    _, r, g, b, a = get_setcolor_params(ctx)
+    m = C(ctx.w0, 8, 8)
+    l = C(ctx.w0, 0, 8)
+    return f"gsDPSetPrimColor({m}, {l}, {r}, {g}, {b}, {a})", 0
+
+def g_setblendcolor(ctx: GfxCtx):
+    _, r, g, b, a = get_setcolor_params(ctx)
+    return f"gsDPSetBlendColor({r}, {g}, {b}, {a})", 0
+
+def g_setfogcolor(ctx: GfxCtx):
+    _, r, g, b, a = get_setcolor_params(ctx)
+    return f"gsDPSetFogColor({r}, {g}, {b}, {a})", 0
+
+def g_setfillcolor(ctx: GfxCtx):
+    color, _, _, _, _ = get_setcolor_params(ctx)
+    return f"gsDPSetFillColor(0x{color:08X})", 0
+
+def g_fillrect(ctx: GfxCtx):
+    ulx = C(ctx.w1, 16, 16)
+    uly = C(ctx.w0, 12, 12)
+    lrx = C(ctx.w1, 0, 16)
+    lry = C(ctx.w0, 0, 12)
+    return f"gsDPFillRectangle({ulx}, {uly}, {lrx}, {lry})", 0
+
+def g_settile(ctx: GfxCtx):
+    fmt = C(ctx.w0, 21, 3)
+    fmt_str = G_SETTILE_FMT.get(fmt, f"{fmt}")
+    siz = C(ctx.w0, 19, 2)
+    siz_str = G_SETTILE_SIZ.get(siz, f"{siz}")
+    line = C(ctx.w0, 9, 9)
+    tmem = C(ctx.w0, 0, 9)
+    tile = C(ctx.w1, 24, 3)
+    tile_str = G_SETTILE_TILES.get(tile, f"{tile}")
+    palette = C(ctx.w1, 20, 4)
+    cmt = C(ctx.w1, 18, 2)
+    cmt_params = build_params_from_flags(cmt, G_SETTILE_FLAGS)
+    maskt = C(ctx.w1, 14, 4)
+    shiftt = C(ctx.w1, 10, 4)
+    cms = C(ctx.w1, 8, 2)
+    cms_params = build_params_from_flags(cms, G_SETTILE_FLAGS)
+    masks = C(ctx.w1, 4, 4)
+    shifts = C(ctx.w1, 0, 4)
+    return f"gsDPSetTile({fmt_str}, {siz_str}, {line}, {tmem}, {tile_str}, {palette}, {cmt_params}, {maskt}, {shiftt}, {cms_params}, {masks}, {shifts})", 0
+
+def g_loadtile(ctx: GfxCtx):
+    tile = C(ctx.w1, 24, 3)
+    tile_str = G_LOADTILE_TILES.get(tile, f"{tile}")
+    uls = C(ctx.w0, 12, 12)
+    ult = C(ctx.w0, 0, 12)
+    lrs = C(ctx.w1, 12, 12)
+    lrt = C(ctx.w1, 0, 12)
+    return f"gsDPLoadTile({tile_str}, {uls}, {ult}, {lrs}, {lrt})", 0
+
+def g_loadblock(ctx: GfxCtx):
+    tile = C(ctx.w1, 24, 3)
+    tile_str = G_LOADBLOCK_TILES.get(tile, f"{tile}")
+    uls = C(ctx.w0, 12, 12)
+    ult = C(ctx.w0, 0, 12)
+    lrs = C(ctx.w1, 12, 12)
+    dxt = C(ctx.w1, 0, 12)
+    return f"gsDPLoadBlock({tile_str}, {uls}, {ult}, {lrs}, {dxt})", 0
+
+def g_settilesize(ctx: GfxCtx):
+    tile = C(ctx.w1, 24, 3)
+    tile_str = G_SETTILESIZE_TILES.get(tile, f"{tile}")
+    uls = C(ctx.w0, 12, 12)
+    ult = C(ctx.w0, 0, 12)
+    lrs = C(ctx.w1, 12, 12)
+    lrt = C(ctx.w1, 0, 12)
+    return f"gsDPSetTileSize({tile_str}, {uls}, {ult}, {lrs}, {lrt})", 0
+
+def g_loadtlut(ctx: GfxCtx):
+    tile = C(ctx.w1, 24, 3)
+    tile_str = G_LOADTLUT_TILES.get(tile, f"{tile}")
+    count = C(ctx.w1, 14, 10)
+    return f"gsDPLoadTLUTCmd({tile_str}, {count})", 0
+
+def g_setscissor(ctx: GfxCtx):
+    mode = C(ctx.w1, 24, 2)
+    mode_str = G_SETSCISSOR_MODES.get(mode, f"{mode}")
+    ulx = C(ctx.w0, 12, 12) // 4
+    uly = C(ctx.w0, 0, 12) // 4
+    lrx = C(ctx.w1, 12, 12) // 4
+    lry = C(ctx.w1, 0, 12) // 4
+    return f"gsDPSetScissor({mode_str}, {ulx}, {uly}, {lrx}, {lry})", 0
+
+def g_rdpfullsync(ctx: GfxCtx):
+    return f"gsDPFullSync()", 0
+
+def g_rdptilesync(ctx: GfxCtx):
+    return f"gsDPTileSync()", 0
+
+def g_rdppipesync(ctx: GfxCtx):
+    return f"gsDPPipeSync()", 0
+
+def g_rdploadsync(ctx: GfxCtx):
+    return f"gsDPLoadSync()", 0
+
+def g_texrectflip(ctx: GfxCtx):
+    xl = C(ctx.w1, 21, 11) << 2
+    yl = C(ctx.w1, 12, 9) << 2
+    xh = C(ctx.w0, 13, 11) << 2
+    yh = C(ctx.w0, 4, 9) << 2
+    dsdx = C(ctx.w1, 4, 8) << 6
+    dtdy = (C(ctx.w1, 0, 4) << 10) | (C(ctx.w0, 0, 4) << 6)
+    return f"gsSPTextureRectangleFlip({xl}, {yl}, {xh}, {yh}, 0, 0, 0, {dsdx}, {dtdy})", 0
+
+def g_texrect(ctx: GfxCtx):
+    xl = C(ctx.w1, 21, 11) << 2
+    yl = C(ctx.w1, 12, 9) << 2
+    xh = C(ctx.w0, 13, 11) << 2
+    yh = C(ctx.w0, 4, 9) << 2
+    dsdx = C(ctx.w1, 4, 8) << 6
+    dtdy = (C(ctx.w1, 0, 4) << 10) | (C(ctx.w0, 0, 4) << 6)
+    return f"gsSPTextureRectangle({xl}, {yl}, {xh}, {yh}, 0, 0, 0, {dsdx}, {dtdy})", 0
+
+#
+# Extended commands
+#
+
+def g_vtx_ext(ctx: GfxCtx):
+    v = ctx.w1
+    n = C(ctx.w0, 12, 8)
+    v0 = C(ctx.w0, 1, 7) - n
+    return f"gsSPVertexNonGlobal({v}, {n}, {v0})", 0
+
+def g_tri2_ext(ctx: GfxCtx):
+    v00 = C(ctx.w0, 16, 8) // 2
+    v01 = C(ctx.w0, 8, 8) // 2
+    v02 = C(ctx.w0, 0, 8) // 2
+    v10 = C(ctx.w1, 16, 8) // 2
+    v11 = C(ctx.w1, 8, 8) // 2
+    v12 = C(ctx.w1, 0, 8) // 2
+    return f"gsSP2TrianglesDjui({v00}, {v01}, {v02}, 0x0, {v10}, {v11}, {v12}, 0x0)", 0
+
+#
+# GFX commands
+#
+
+GFX_COMMANDS = {
+
+# RSP
+    G_NOOP: g_noop,
+    G_SETOTHERMODE_H: lambda ctx: g_setothermode(ctx, "G_SETOTHERMODE_H", G_SETOTHERMODE_H_SHIFTS),
+    G_SETOTHERMODE_L: lambda ctx: g_setothermode(ctx, "G_SETOTHERMODE_L", G_SETOTHERMODE_L_SHIFTS),
+    G_SPNOOP: g_spnoop,
+    G_ENDDL: g_enddl,
+    G_DL: g_dl,
+    G_MOVEMEM: g_movemem,
+    G_MOVEWORD: g_moveword,
+    G_MTX: g_mtx,
+    G_GEOMETRYMODE: g_geometrymode,
+    G_POPMTX: g_popmtx,
+    G_TEXTURE: g_texture,
+    G_COPYMEM: g_copymem,
+    G_VTX: g_vtx,
+    G_TRI1: g_tri1,
+    G_TRI2: g_tri2,
+
+# RDP
+    G_SETCIMG: g_setcimg,
+    G_SETZIMG: g_setzimg,
+    G_SETTIMG: g_settimg,
+    G_SETCOMBINE: g_setcombine,
+    G_SETENVCOLOR: g_setenvcolor,
+    G_SETPRIMCOLOR: g_setprimcolor,
+    G_SETBLENDCOLOR: g_setblendcolor,
+    G_SETFOGCOLOR: g_setfogcolor,
+    G_SETFILLCOLOR: g_setfillcolor,
+    G_FILLRECT: g_fillrect,
+    G_SETTILE: g_settile,
+    G_LOADTILE: g_loadtile,
+    G_LOADBLOCK: g_loadblock,
+    G_SETTILESIZE: g_settilesize,
+    G_LOADTLUT: g_loadtlut,
+    G_SETSCISSOR: g_setscissor,
+    G_RDPFULLSYNC: g_rdpfullsync,
+    G_RDPTILESYNC: g_rdptilesync,
+    G_RDPPIPESYNC: g_rdppipesync,
+    G_RDPLOADSYNC: g_rdploadsync,
+    G_TEXRECTFLIP: g_texrectflip,
+    G_TEXRECT: g_texrect,
+
+# Extended
+    G_VTX_EXT: g_vtx_ext,
+    G_TRI2_EXT: g_tri2_ext,
+}
 
 
 def write_model_inc_c(dirpath: str, model_name: str, gfxdata: GfxData):
@@ -258,8 +460,17 @@ def write_model_inc_c(dirpath: str, model_name: str, gfxdata: GfxData):
         # Write display lists
         for name, displaylist in gfxdata.displaylists.items():
             models_inc_c.write("Gfx %s[] = {\n" % (name))
-            for i in range(0, len(displaylist.buffer), 2):
-                w0 = displaylist.buffer[i + 0]
-                w1 = displaylist.buffer[i + 1]
-                write_display_list_words(models_inc_c, w0, w1)
+            i = 0
+            while i < len(displaylist.buffer):
+                ctx = GfxCtx(displaylist.buffer[i:])
+                op = C(ctx.w0, 24, 8)
+                cmd = GFX_COMMANDS.get(op)
+                if cmd:
+                    line, skip = cmd(ctx)
+                    models_inc_c.write(f"    {line},\n")
+                    i += skip * 2
+                else:
+                    models_inc_c.write(f"RAW_WORDS(0x{ctx.w0:08X}, {ctx.w1 if isinstance(ctx.w1, str) else f'0x{ctx.w1:08X}'}),\n")
+                    warning(f"Unknown command: {ctx.w0:08X} {ctx.w1 if isinstance(ctx.w1, str) else f'{ctx.w1:08X}'} [{name}:0x{i//2:04X}]")
+                i += 2
             models_inc_c.write("};\n\n")
