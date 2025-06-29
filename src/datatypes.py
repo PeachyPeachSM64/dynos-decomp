@@ -81,11 +81,11 @@ DATA_TYPES = {
 },
 18: {
     "name": "LIGHT_T",
-    "read": not_implemented,
+    "read": GfxData.read_light,
 },
 19: {
     "name": "AMBIENT_T",
-    "read": not_implemented,
+    "read": GfxData.read_ambient,
 },
 20: {
     "name": "TEXTURE_LIST",

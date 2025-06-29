@@ -340,56 +340,94 @@ G_SETSCISSOR_MODES = {
 # G_SETCOMBINE
 #
 
-G_CCMUX_COMBINED = 0
-G_CCMUX_TEXEL0 = 1
-G_CCMUX_TEXEL1 = 2
-G_CCMUX_PRIMITIVE = 3
-G_CCMUX_SHADE = 4
-G_CCMUX_ENVIRONMENT = 5
-G_CCMUX_1 = 6
-G_CCMUX_COMBINED_ALPHA = 7
-G_CCMUX_TEXEL0_ALPHA = 8
-G_CCMUX_TEXEL1_ALPHA = 9
-G_CCMUX_PRIMITIVE_ALPHA = 10
-G_CCMUX_SHADE_ALPHA = 11
-G_CCMUX_ENV_ALPHA = 12
-G_CCMUX_LOD_FRACTION = 13
-G_CCMUX_PRIM_LOD_FRAC = 14
-
+# https://wiki.cloudmodding.com/oot/F3DZEX2#Color_Combiner_Settings
 G_SETCOMBINE_COLOR_COMBINERS = {
-    G_CCMUX_COMBINED: "COMBINED",
-    G_CCMUX_TEXEL0: "TEXEL0",
-    G_CCMUX_TEXEL1: "TEXEL1",
-    G_CCMUX_PRIMITIVE: "PRIMITIVE",
-    G_CCMUX_SHADE: "SHADE",
-    G_CCMUX_ENVIRONMENT: "ENVIRONMENT",
-    G_CCMUX_1: "1",
-    G_CCMUX_COMBINED_ALPHA: "COMBINED_ALPHA",
-    G_CCMUX_TEXEL0_ALPHA: "TEXEL0_ALPHA",
-    G_CCMUX_TEXEL1_ALPHA: "TEXEL1_ALPHA",
-    G_CCMUX_PRIMITIVE_ALPHA: "PRIMITIVE_ALPHA",
-    G_CCMUX_SHADE_ALPHA: "SHADE_ALPHA",
-    G_CCMUX_ENV_ALPHA: "ENV_ALPHA",
-    G_CCMUX_LOD_FRACTION: "LOD_FRACTION",
-    G_CCMUX_PRIM_LOD_FRAC: "PRIM_LOD_FRAC",
+    "a": {
+        0x0: "COMBINED",
+        0x1: "TEXEL0",
+        0x2: "TEXEL1",
+        0x3: "PRIMITIVE",
+        0x4: "SHADE",
+        0x5: "ENVIRONMENT",
+        0x6: "1",
+        0x7: "NOISE",
+    },
+    "b": {
+        0x0: "COMBINED",
+        0x1: "TEXEL0",
+        0x2: "TEXEL1",
+        0x3: "PRIMITIVE",
+        0x4: "SHADE",
+        0x5: "ENVIRONMENT",
+        0x6: "CENTER",
+        0x7: "K4",
+    },
+    "c": {
+        0x0: "COMBINED",
+        0x1: "TEXEL0",
+        0x2: "TEXEL1",
+        0x3: "PRIMITIVE",
+        0x4: "SHADE",
+        0x5: "ENVIRONMENT",
+        0x6: "SCALE",
+        0x7: "COMBINED_ALPHA",
+        0x8: "TEXEL0_ALPHA",
+        0x9: "TEXEL1_ALPHA",
+        0xA: "PRIMITIVE_ALPHA",
+        0xB: "SHADE_ALPHA",
+        0xC: "ENV_ALPHA",
+        0xD: "LOD_FRACTION",
+        0xE: "PRIM_LOD_FRAC",
+        0xF: "K5",
+    },
+    "d": {
+        0x0: "COMBINED",
+        0x1: "TEXEL0",
+        0x2: "TEXEL1",
+        0x3: "PRIMITIVE",
+        0x4: "SHADE",
+        0x5: "ENVIRONMENT",
+        0x6: "1",
+    },
 }
 
-G_ACMUX_COMBINED = 0
-G_ACMUX_TEXEL0 = 1
-G_ACMUX_TEXEL1 = 2
-G_ACMUX_PRIMITIVE = 3
-G_ACMUX_SHADE = 4
-G_ACMUX_ENVIRONMENT = 5
-G_ACMUX_1 = 6
-
 G_SETCOMBINE_ALPHA_COMBINERS = {
-    G_ACMUX_COMBINED: "COMBINED",
-    G_ACMUX_TEXEL0: "TEXEL0",
-    G_ACMUX_TEXEL1: "TEXEL1",
-    G_ACMUX_PRIMITIVE: "PRIMITIVE",
-    G_ACMUX_SHADE: "SHADE",
-    G_ACMUX_ENVIRONMENT: "ENVIRONMENT",
-    G_ACMUX_1: "1",
+    "a": {
+        0x0: "COMBINED",
+        0x1: "TEXEL0",
+        0x2: "TEXEL1",
+        0x3: "PRIMITIVE",
+        0x4: "SHADE",
+        0x5: "ENVIRONMENT",
+        0x6: "1",
+    },
+    "b": {
+        0x0: "COMBINED",
+        0x1: "TEXEL0",
+        0x2: "TEXEL1",
+        0x3: "PRIMITIVE",
+        0x4: "SHADE",
+        0x5: "ENVIRONMENT",
+        0x6: "1",
+    },
+    "c": {
+        0x0: "LOD_FRACTION",
+        0x1: "TEXEL0",
+        0x2: "TEXEL1",
+        0x3: "PRIMITIVE",
+        0x4: "SHADE",
+        0x5: "ENVIRONMENT",
+        0x6: "PRIM_LOD_FRAC",
+    },
+    "d": {
+        0x0: "COMBINED",
+        0x1: "TEXEL0",
+        0x2: "TEXEL1",
+        0x3: "PRIMITIVE",
+        0x4: "SHADE",
+        0x5: "ENVIRONMENT",
+        0x6: "1",
+    },
 }
 
 G_SETCOMBINE_MODES = {

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
-from .print import info
+from .print import info, warning
 from .read import *
-from .lights import Lights1
+from .lights import Light, Ambient, Lights1
 from .texture import Texture
 from .vertex import VertexArray
 from .displaylist import DisplayList
@@ -11,6 +11,8 @@ from .animation import Animation
 
 @dataclass
 class GfxData:
+    lights: dict[str, Light] = field(default_factory=lambda: {})
+    ambients: dict[str, Ambient] = field(default_factory=lambda: {})
     lights1: dict[str, Lights1] = field(default_factory=lambda: {})
     textures: dict[str, Texture] = field(default_factory=lambda: {})
     vertices: dict[str, VertexArray] = field(default_factory=lambda: {})
@@ -19,6 +21,18 @@ class GfxData:
     animations: dict[str, Animation] = field(default_factory=lambda: {})
     animation_table: list[str] = field(default_factory=lambda: [])
     priority: int = 0
+
+    def read_light(self, buffer: bytes, index: int):
+        name, index = read_name(buffer, index)
+        data, index = Light.read(buffer, index)
+        self.lights[name] = data
+        return index, name
+
+    def read_ambient(self, buffer: bytes, index: int):
+        name, index = read_name(buffer, index)
+        data, index = Ambient.read(buffer, index)
+        self.ambients[name] = data
+        return index, name
 
     def read_lights1(self, buffer: bytes, index: int):
         name, index = read_name(buffer, index)
@@ -79,6 +93,6 @@ class GfxData:
                 index, name = DATA_TYPES[data_type]["read"](gfx, buffer, index)
                 info(name)
             else:
-                info("%08X    [!] Unknown data type: %d" % (index - 1, data_type))
+                warning("\n%08X    [!] Unknown data type: %d" % (index - 1, data_type))
                 break
         return gfx

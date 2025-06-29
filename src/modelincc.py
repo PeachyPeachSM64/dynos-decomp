@@ -5,8 +5,9 @@ from .gfxdata import GfxData
 
 
 class GfxCtx:
-    def __init__(self, buffer: list):
+    def __init__(self, buffer: list, gfxdata: GfxData):
         self.buffer = buffer
+        self.gfxdata = gfxdata
 
     def w(self, offset: int, index: int):
         return self.buffer[2 * offset + index]
@@ -87,7 +88,9 @@ def g_movemem(ctx: GfxCtx):
     if idx == G_MV_LIGHT:
         light, offset = get_pointer_and_offset(ctx.w1)
         lightidx = (C(ctx.w0, 8, 8) * 8) // 24 - 1
-        return f"gsSPLight(&{light}.{'l' if offset == 1 else 'a'}, {lightidx})", 0
+        if light in ctx.gfxdata.lights1:
+            return f"gsSPLight(&{light}.{'l' if offset == 1 else 'a'}, {lightidx})", 0
+        return f"gsSPLight({light}, {lightidx})", 0
     adrs = ctx.w1
     length = C(ctx.w0, 19, 5) * 8 + 1
     ofs = C(ctx.w0, 8, 8) * 8
@@ -175,29 +178,23 @@ def g_tri2(ctx: GfxCtx):
 # RDP commands
 #
 
-def get_cc(combiners: dict, v: int, bits: int):
-    comb = combiners.get(v)
-    if comb is None or v >= ((1 << bits) - 1):
-        return "0"
-    return comb
-
 def g_setcombine(ctx: GfxCtx):
-    a0 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w0, 20, 4), 4)
-    b0 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w1, 28, 4), 4)
-    c0 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w0, 15, 5), 5)
-    d0 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w1, 15, 3), 3)
-    Aa0 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w0, 12, 3), 3)
-    Ab0 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w1, 12, 3), 3)
-    Ac0 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w0, 9, 3), 3)
-    Ad0 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w1, 9, 3), 3)
-    a1 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w0, 5, 4), 4)
-    b1 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w1, 24, 4), 4)
-    c1 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w0, 0, 5), 5)
-    d1 = get_cc(G_SETCOMBINE_COLOR_COMBINERS, C(ctx.w1, 6, 3), 3)
-    Aa1 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w1, 21, 3), 3)
-    Ab1 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w1, 3, 3), 3)
-    Ac1 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w1, 18, 3), 3)
-    Ad1 = get_cc(G_SETCOMBINE_ALPHA_COMBINERS, C(ctx.w1, 0, 3), 3)
+    a0 = G_SETCOMBINE_COLOR_COMBINERS["a"].get(C(ctx.w0, 20, 4), "0")
+    b0 = G_SETCOMBINE_COLOR_COMBINERS["b"].get(C(ctx.w1, 28, 4), "0")
+    c0 = G_SETCOMBINE_COLOR_COMBINERS["c"].get(C(ctx.w0, 15, 5), "0")
+    d0 = G_SETCOMBINE_COLOR_COMBINERS["d"].get(C(ctx.w1, 15, 3), "0")
+    Aa0 = G_SETCOMBINE_ALPHA_COMBINERS["a"].get(C(ctx.w0, 12, 3), "0")
+    Ab0 = G_SETCOMBINE_ALPHA_COMBINERS["b"].get(C(ctx.w1, 12, 3), "0")
+    Ac0 = G_SETCOMBINE_ALPHA_COMBINERS["c"].get(C(ctx.w0, 9, 3), "0")
+    Ad0 = G_SETCOMBINE_ALPHA_COMBINERS["d"].get(C(ctx.w1, 9, 3), "0")
+    a1 = G_SETCOMBINE_COLOR_COMBINERS["a"].get(C(ctx.w0, 5, 4), "0")
+    b1 = G_SETCOMBINE_COLOR_COMBINERS["b"].get(C(ctx.w1, 24, 4), "0")
+    c1 = G_SETCOMBINE_COLOR_COMBINERS["c"].get(C(ctx.w0, 0, 5), "0")
+    d1 = G_SETCOMBINE_COLOR_COMBINERS["d"].get(C(ctx.w1, 6, 3), "0")
+    Aa1 = G_SETCOMBINE_ALPHA_COMBINERS["a"].get(C(ctx.w1, 21, 3), "0")
+    Ab1 = G_SETCOMBINE_ALPHA_COMBINERS["b"].get(C(ctx.w1, 3, 3), "0")
+    Ac1 = G_SETCOMBINE_ALPHA_COMBINERS["c"].get(C(ctx.w1, 18, 3), "0")
+    Ad1 = G_SETCOMBINE_ALPHA_COMBINERS["d"].get(C(ctx.w1, 0, 3), "0")
     cycle1 = f"{a0}, {b0}, {c0}, {d0}, {Aa0}, {Ab0}, {Ac0}, {Ad0}"
     cycle2 = f"{a1}, {b1}, {c1}, {d1}, {Aa1}, {Ab1}, {Ac1}, {Ad1}"
     cm1 = G_SETCOMBINE_MODES.get(cycle1)
@@ -433,6 +430,18 @@ def write_model_inc_c(dirpath: str, model_name: str, gfxdata: GfxData):
     with open(os.path.join(dirpath, "model.inc.c"), "w", newline="\n") as models_inc_c:
 
         # Write lights
+        for name, light in gfxdata.lights.items():
+            models_inc_c.write("Light_t %s[] = {{{0x%02X, 0x%02X, 0x%02X}, 0, {0x%02X, 0x%02X, 0x%02X}, 0, {%d, %d, %d}, 0}};" % (
+                name, light.cr, light.cg, light.cb, light.c2r, light.c2g, light.c2b, light.dx, light.dy, light.dz
+            ))
+            models_inc_c.write("\n\n")
+
+        for name, ambient in gfxdata.ambients.items():
+            models_inc_c.write("Ambient_t %s[] = {{{0x%02X, 0x%02X, 0x%02X}, 0, {0x%02X, 0x%02X, 0x%02X}, 0}};" % (
+                name, ambient.cr, ambient.cg, ambient.cb, ambient.c2r, ambient.c2g, ambient.c2b
+            ))
+            models_inc_c.write("\n\n")
+
         for name, lights1 in gfxdata.lights1.items():
             models_inc_c.write("Lights1 %s = gdSPDefLights1(0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X);" % (
                 name, lights1.ar, lights1.ag, lights1.ab, lights1.r1, lights1.g1, lights1.b1, lights1.x1, lights1.y1, lights1.z1
@@ -462,7 +471,7 @@ def write_model_inc_c(dirpath: str, model_name: str, gfxdata: GfxData):
             models_inc_c.write("Gfx %s[] = {\n" % (name))
             i = 0
             while i < len(displaylist.buffer):
-                ctx = GfxCtx(displaylist.buffer[i:])
+                ctx = GfxCtx(displaylist.buffer[i:], gfxdata)
                 op = C(ctx.w0, 24, 8)
                 cmd = GFX_COMMANDS.get(op)
                 if cmd:
