@@ -90,9 +90,10 @@ class DynosDecompGUI:
 
 
     def open_file_explorer(self):
-        filepath = filedialog.askopenfilename(filetypes=FILE_TYPES)
-        if filepath and os.path.isfile(filepath):
-            self.listbox_files.insert(tk.END, DynosDecompGUI.normalize_filepath(filepath))
+        files = filedialog.askopenfilenames(filetypes=FILE_TYPES)
+        for filepath in files:
+            if os.path.isfile(filepath):
+                self.listbox_files.insert(tk.END, DynosDecompGUI.normalize_filepath(filepath))
 
 
     def print_text(self, message: str, **kwargs):
@@ -202,6 +203,8 @@ class DynosDecompGUI:
         self.window = TkinterDnD.Tk()
         self.window.title(WINDOW_TITLE)
         self.window.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
+        icon = tk.PhotoImage(file="ico/icon.png")
+        self.window.wm_iconphoto(False, icon)
 
         # Files browser
         layout_browser = tk.Frame(self.window, bg="lightgray")
