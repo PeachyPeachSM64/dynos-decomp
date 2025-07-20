@@ -1,6 +1,6 @@
 import os
+from . import prints
 from .gbi import *
-from .print import warning
 from .gfxdata import GfxData
 
 
@@ -480,6 +480,6 @@ def write_model_inc_c(dirpath: str, model_name: str, gfxdata: GfxData):
                     i += skip * 2
                 else:
                     models_inc_c.write(f"RAW_WORDS(0x{ctx.w0:08X}, {ctx.w1 if isinstance(ctx.w1, str) else f'0x{ctx.w1:08X}'}),\n")
-                    warning(f"Unknown command: {ctx.w0:08X} {ctx.w1 if isinstance(ctx.w1, str) else f'{ctx.w1:08X}'} [{name}:0x{i//2:04X}]")
+                    prints.warning(f"Unknown gfx command: {ctx.w0:08X} {ctx.w1 if isinstance(ctx.w1, str) else f'{ctx.w1:08X}'} [{name}:0x{i//2:04X}]")
                 i += 2
             models_inc_c.write("};\n\n")

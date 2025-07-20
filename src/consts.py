@@ -618,4 +618,9 @@ FUNCTION_NAMES = [
     "bhv_blue_coin_switch_init",
     "bhv_star_number_loop",
     "spawn_star_number",
+    "bhv_ferris_wheel_platform_init",
+    "geo_mario_cap_display_list",
+    "bhv_ambient_light_update",
+    "bhv_point_light_init",
+    "bhv_point_light_loop",
 ]

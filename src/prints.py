@@ -20,21 +20,21 @@ Options:
   \033[0;35m-e\033[0m  extract source files (geo, model, textures...) from \033[0;34mFILE\033[0m
 
 Examples:
-  python dynos-decomp.py -d mario_geo.bin    decompress `mario_geo.bin` into `mario_geo.raw`
-  python dynos-decomp.py -c mario_geo.raw    compress `mario_geo.raw` into `mario_geo.bin`
-  python dynos-decomp.py -e mario_geo.bin    extract files from `mario_geo.bin` into a `mario_geo` directory
+  python dynos-decomp.py -d mario_geo.bin        decompress `mario_geo.bin` into `mario_geo.bin.raw`
+  python dynos-decomp.py -c mario_geo.bin.raw    compress `mario_geo.bin.raw` into `mario_geo.bin`
+  python dynos-decomp.py -e mario_geo.bin        extract files from `mario_geo.bin` into a `mario_geo` directory
 """)
     exit(exit_code)
 
 
-def info(message: str, *args, **kwargs):
-    print(message, *args, **kwargs)
+def info(message: str, **kwargs):
+    print(message, **kwargs)
 
 
-def warning(message: str):
-    print(f"\033[0;33mWarning: {message}\033[0m")
+def warning(message: str, **kwargs):
+    print(f"\033[0;33mWarning: {message}\033[0m", **kwargs)
 
 
-def error(message: str):
-    print(f"\033[0;31mError: {message}\033[0m")
+def error(message: str, **kwargs):
+    print(f"\033[0;31mError: {message}\033[0m", **kwargs)
     usage(1)
