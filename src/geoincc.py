@@ -97,7 +97,7 @@ def CMD_PTR(a):
     ]
 
 
-def define_geo_command(name: str, argnames: str, bits_12_15: int | None, *commands):
+def define_geo_command(name: str, argnames: str, bits_12_15: int|None, *commands):
     args = []
     for argname in argnames.split(","):
         for index, command in enumerate(commands):

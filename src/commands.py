@@ -6,6 +6,11 @@ from .geoincc import write_geo_inc_c
 from .anims import write_animations, write_animation_table
 
 
+# TODO:
+# not used by the gui
+# broken, command line is unusable
+
+
 def is_compressed(data: bytes):
     return data[:8].decode() == "DYNOSBIN"
 
@@ -45,62 +50,6 @@ def decompress(filepath: str, data: bytes):
 def extract(filepath: str, data: bytes):
     if is_compressed(data):
         data, _ = decompress(filepath, data)
-
-    prints.info("")
-    gfxdata = GfxData.read(data)
-
-    dirpath = get_dest_filepath(filepath, ".bin", "")
-    model_name = dirpath.split("/")[-1]
-
-    prints.info("")
-    prints.info("--------------------------------")
-    prints.info(f"model: {model_name}")
-    prints.info(f"lights1: {len(gfxdata.lights1)}")
-    prints.info(f"textures: {len(gfxdata.textures)}")
-    prints.info(f"vertices: {len(gfxdata.vertices)}")
-    prints.info(f"displaylists: {len(gfxdata.displaylists)}")
-    prints.info(f"geolayouts: {len(gfxdata.geolayouts)}")
-    prints.info(f"animations: {len(gfxdata.animations)}")
-    prints.info("priority: %02X" % (gfxdata.priority))
-    prints.info("--------------------------------")
-    prints.info("")
-
-    os.makedirs(dirpath, exist_ok=True)
-    write_model_inc_c(dirpath, model_name, gfxdata)
-    write_geo_inc_c(dirpath, gfxdata)
-    write_animations(dirpath, gfxdata)
-    write_animation_table(dirpath, gfxdata)
-    prints.info("")
-    prints.info(f"\033[0;32mModel files extracted successfully to `{dirpath}`\033[0m")
-    prints.info("")
-
-
-def gui_decomp(filepath: str):
-    with open(filepath, "rb") as f:
-        data = f.read()
-
-    # Get bin and raw data
-    if is_compressed(data):
-        raw_data = zlib.decompress(data[16:])
-        bin_data = data
-    else:
-        raw_data = data
-        bin_data = b"DYNOSBIN" + len(data).to_bytes(8, byteorder="little", signed=False) + zlib.compress(data)
-
-    # Make dest dir, write raw and bin files
-    dirpath = get_dest_filepath(filepath, ".bin", "")
-    os.makedirs(dirpath, exist_ok=True)
-
-    raw_filename = os.path.basename(get_dest_filepath(filepath, ".bin", ".bin.raw"))
-    raw_filepath = os.path.join(dirpath, raw_filename)
-    with open(raw_filepath, "wb") as f: f.write(raw_data)
-
-    bin_filename = os.path.basename(get_dest_filepath(filepath, ".bin"))
-    bin_filepath = os.path.join(dirpath, bin_filename)
-    with open(bin_filepath, "wb") as f: f.write(bin_data)
-
-    # Extract files
-    extract(filepath, raw_data)
 
 
 OPTIONS_TO_COMMANDS = {

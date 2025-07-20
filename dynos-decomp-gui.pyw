@@ -1,4 +1,5 @@
 import os, re
+import itertools
 import traceback
 import tkinter as tk
 from tkinterdnd2 import DND_FILES, TkinterDnD
@@ -6,7 +7,7 @@ from tkinter import scrolledtext, filedialog, font
 
 from dataclasses import dataclass
 from src import prints
-from src.commands import gui_decomp
+from src.decomp import DECOMP_TABLE
 
 
 WINDOW_TITLE = "DynOS Decomp"
@@ -14,11 +15,17 @@ WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
 
 FILE_TYPES = [
-    ("DynOS actor files", "*.bin *.bin.raw"),
+    (info["name"], "*"+ext + (" *"+ext+".raw" if info["compressed"] else ""))
+    for ext, info in DECOMP_TABLE.items()
 ]
 FILE_TYPES.insert(0,
-    ("DynOS compatible files", " ".join([pattern for (_, pattern) in FILE_TYPES]))
+    ("DynOS compatible files", " ".join([pattern for _, pattern in FILE_TYPES]))
 )
+FILE_TYPES_PATTERNS = [
+    (ext, [".*\\"+ext] + ([".*\\"+ext+"\\.raw"] if info["compressed"] else []))
+    for ext, info in DECOMP_TABLE.items()
+]
+FILE_TYPES_ALL_PATTERNS = list(itertools.chain(*[patterns for _, patterns in FILE_TYPES_PATTERNS]))
 
 COLOR_CODES_TO_TK_COLORS = {
     "\033[0;31m": "red",
@@ -85,7 +92,7 @@ class DynosDecompGUI:
         files = DynosDecompGUI.get_files_from_drop_event(event)
         for file in files:
             for filepath in [os.path.join(file, f) for f in os.listdir(file)] if os.path.isdir(file) else [file]:
-                if os.path.isfile(filepath) and any(re.match(pattern.replace(".", "\\.").replace("*", ".*"), filepath) for pattern in FILE_TYPES[0][1].split(" ")):
+                if os.path.isfile(filepath) and any(re.match(pattern, filepath) for pattern in FILE_TYPES_ALL_PATTERNS):
                     self.listbox_files.insert(tk.END, DynosDecompGUI.normalize_filepath(filepath))
 
 
@@ -168,7 +175,10 @@ class DynosDecompGUI:
                 f"{filepath}\n" +
                 "=" * max_width + "\n"
             )
-            gui_decomp(filepath)
+            for ext, patterns in FILE_TYPES_PATTERNS:
+                if any(re.match(pattern, filepath) for pattern in patterns):
+                    DECOMP_TABLE[ext]["decomp"](filepath)
+                    break
             self.text_output.update_idletasks()
             self.listbox_files.config(state=tk.NORMAL) # Not unlocking the listbox before deleting hangs the program. Oops!
             self.listbox_files.delete(0)

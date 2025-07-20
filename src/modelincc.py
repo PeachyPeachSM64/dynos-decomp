@@ -454,8 +454,7 @@ def write_model_inc_c(dirpath: str, model_name: str, gfxdata: GfxData):
                 name, model_name, texture.ref or name
             ))
             models_inc_c.write("\n\n")
-            if texture.png:
-                open(os.path.join(dirpath, name + ".rgba32.png"), "wb").write(texture.png)
+            texture.write(os.path.join(dirpath, name + ".rgba32.png"))
 
         # Write vertex arrays
         for name, vtxarr in gfxdata.vertices.items():

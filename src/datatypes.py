@@ -93,7 +93,7 @@ DATA_TYPES = {
 },
 21: {
     "name": "TEXTURE_RAW",
-    "read": not_implemented,
+    "read": GfxData.read_texture_raw,
 },
 22: {
     "name": "BEHAVIOR_SCRIPT",

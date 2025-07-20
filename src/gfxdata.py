@@ -42,7 +42,13 @@ class GfxData:
 
     def read_texture(self, buffer: bytes, index: int):
         name, index = read_name(buffer, index)
-        data, index = Texture.read(buffer, index)
+        data, index = Texture.read(buffer, index, False)
+        self.textures[name] = data
+        return index, name
+
+    def read_texture_raw(self, buffer: bytes, index: int):
+        name, index = read_name(buffer, index)
+        data, index = Texture.read(buffer, index, True)
         self.textures[name] = data
         return index, name
 

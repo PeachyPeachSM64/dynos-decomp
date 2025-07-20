@@ -21,10 +21,19 @@ A GUI made in Python to decompile DynOS binary files.
 ## Supported file formats
 
 - Actor files (`.bin`, `.bin.raw`)
+- Texture files (`.tex`)
 
 ## Troubleshooting
 
-If the program doesn't start, you might need to install `tkinterdnd2`:
+If the program doesn't start, you might need to install some Python packages:
 - Open a terminal (on Windows: press `[Ctrl] + [R]`, input `cmd` then hit `[Enter]`)
-- Run this command: `pip install tkinterdnd2`
+- Run this command: `pip install -U tkinterdnd2 pypng`
 - Close the terminal and launch the program again
+
+## Progress
+
+- actors: DONE
+- textures: DONE
+- behaviors: 0%
+- collisions: 0%
+- levels: 0%
