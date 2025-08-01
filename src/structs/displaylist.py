@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from ..consts.consts import PNTR
+from ..consts.pointers import PNTR
 from ..read import *
 
 

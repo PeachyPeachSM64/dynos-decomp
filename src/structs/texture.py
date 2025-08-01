@@ -1,7 +1,7 @@
 import png
 from dataclasses import dataclass, field
 from .. import prints
-from ..consts.consts import TEXR
+from ..consts.pointers import TEXR
 from ..read import *
 
 # Image formats

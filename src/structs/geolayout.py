@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from ..consts.consts import FUNC, PNTR, LUAV
+from ..consts.pointers import FUNC, PNTR, LUAV
 from ..consts.functions import FUNCTION_NAMES
 from ..read import *
 

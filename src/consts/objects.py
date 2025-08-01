@@ -1,88 +1,93 @@
 OBJECT_FIELDS = {
+    0x01: "oFlags",
+    # 0x02, 0: "oDialogResponse",
+    # 0x02, 1: "oDialogState",
+    0x03: "oUnk94",
+    0x04: "oSyncID",
+    0x05: "oIntangibleTimer",
+    0x06: "oPosX",
+    0x07: "oPosY",
+    0x08: "oPosZ",
+    0x09: "oVelX",
+    0x0A: "oVelY",
+    0x0B: "oVelZ",
+    0x0C: "oForwardVel",
+    0x0C: "oForwardVelS32",
+    0x0D: "oUnkBC",
+    0x0E: "oUnkC0",
+    0x0F: "oMoveAnglePitch",
+    0x10: "oMoveAngleYaw",
+    0x11: "oMoveAngleRoll",
+    0x12: "oFaceAnglePitch",
+    0x13: "oFaceAngleYaw",
+    0x14: "oFaceAngleRoll",
+    0x15: "oGraphYOffset",
+    0x16: "oActiveParticleFlags",
+    0x17: "oGravity",
+    0x18: "oFloorHeight",
+    0x19: "oMoveFlags",
+    0x1A: "oAnimState",
+    0x23: "oAngleVelPitch",
+    0x24: "oAngleVelYaw",
+    0x25: "oAngleVelRoll",
+    0x26: "oAnimations",
+    0x27: "oHeldState",
+    0x28: "oWallHitboxRadius",
+    0x29: "oDragStrength",
+    0x2A: "oInteractType",
+    0x2B: "oInteractStatus",
+    0x2C: "oParentRelativePosX",
+    0x2D: "oParentRelativePosY",
+    0x2E: "oParentRelativePosZ",
+    0x2F: "oBehParams2ndByte",
+    0x31: "oAction",
+    0x32: "oSubAction",
+    0x33: "oTimer",
+    0x34: "oBounciness",
+    0x35: "oDistanceToMario",
+    0x36: "oAngleToMario",
+    0x37: "oHomeX",
+    0x38: "oHomeY",
+    0x39: "oHomeZ",
+    0x3A: "oFriction",
+    0x3B: "oBuoyancy",
+    0x3C: "oSoundStateID",
+    0x3D: "oOpacity",
+    0x3E: "oDamageOrCoinValue",
+    0x3F: "oHealth",
+    0x40: "oBehParams",
+    0x41: "oPrevAction",
+    0x42: "oInteractionSubtype",
+    0x43: "oCollisionDistance",
+    0x44: "oNumLootCoins",
+    0x45: "oDrawingDistance",
+    0x46: "oRoom",
+    0x47: "oSyncDeath",
+    0x48: "oUnk1A8",
+    0x4B: "oWallAngle",
+    # 0x4C, 0: "oFloorType",
+    # 0x4C, 1: "oFloorRoom",
+    0x4D: "oAngleToHome",
+    0x4E: "oFloor",
+    0x4F: "oDeathSound",
+}
 
-# #define /*0x08C*/ oFlags                      OBJECT_FIELD_U32(0x01)
-# #define /*0x090*/ oDialogResponse             OBJECT_FIELD_S16(0x02, 0)
-# #define /*0x092*/ oDialogState                OBJECT_FIELD_S16(0x02, 1)
-# #define /*0x094*/ oUnk94                      OBJECT_FIELD_U32(0x03)
-# #define /*0x098*/ oSyncID                     OBJECT_FIELD_U32(0x04)
-# #define /*0x09C*/ oIntangibleTimer            OBJECT_FIELD_S32(0x05)
-# #define /*0x0A0*/ O_POS_INDEX                 0x06
-# #define /*0x0A0*/ oPosX                       OBJECT_FIELD_F32(O_POS_INDEX + 0)
-# #define /*0x0A4*/ oPosY                       OBJECT_FIELD_F32(O_POS_INDEX + 1)
-# #define /*0x0A8*/ oPosZ                       OBJECT_FIELD_F32(O_POS_INDEX + 2)
-# #define /*0x0AC*/ oVelX                       OBJECT_FIELD_F32(0x09)
-# #define /*0x0B0*/ oVelY                       OBJECT_FIELD_F32(0x0A)
-# #define /*0x0B4*/ oVelZ                       OBJECT_FIELD_F32(0x0B)
-# #define /*0x0B8*/ oForwardVel                 OBJECT_FIELD_F32(0x0C)
-# #define /*0x0B8*/ oForwardVelS32              OBJECT_FIELD_S32(0x0C)
-# #define /*0x0BC*/ oUnkBC                      OBJECT_FIELD_F32(0x0D)
-# #define /*0x0C0*/ oUnkC0                      OBJECT_FIELD_F32(0x0E)
-# #define /*0x0C4*/ O_MOVE_ANGLE_INDEX          0x0F
-# #define /*0x0C4*/ O_MOVE_ANGLE_PITCH_INDEX    (O_MOVE_ANGLE_INDEX + 0)
-# #define /*0x0C4*/ O_MOVE_ANGLE_YAW_INDEX      (O_MOVE_ANGLE_INDEX + 1)
-# #define /*0x0C4*/ O_MOVE_ANGLE_ROLL_INDEX     (O_MOVE_ANGLE_INDEX + 2)
-# #define /*0x0C4*/ oMoveAnglePitch             OBJECT_FIELD_S32(O_MOVE_ANGLE_PITCH_INDEX)
-# #define /*0x0C8*/ oMoveAngleYaw               OBJECT_FIELD_S32(O_MOVE_ANGLE_YAW_INDEX)
-# #define /*0x0CC*/ oMoveAngleRoll              OBJECT_FIELD_S32(O_MOVE_ANGLE_ROLL_INDEX)
-# #define /*0x0D0*/ O_FACE_ANGLE_INDEX          0x12
-# #define /*0x0D0*/ O_FACE_ANGLE_PITCH_INDEX    (O_FACE_ANGLE_INDEX + 0)
-# #define /*0x0D0*/ O_FACE_ANGLE_YAW_INDEX      (O_FACE_ANGLE_INDEX + 1)
-# #define /*0x0D0*/ O_FACE_ANGLE_ROLL_INDEX     (O_FACE_ANGLE_INDEX + 2)
-# #define /*0x0D0*/ oFaceAnglePitch             OBJECT_FIELD_S32(O_FACE_ANGLE_PITCH_INDEX)
-# #define /*0x0D4*/ oFaceAngleYaw               OBJECT_FIELD_S32(O_FACE_ANGLE_YAW_INDEX)
-# #define /*0x0D8*/ oFaceAngleRoll              OBJECT_FIELD_S32(O_FACE_ANGLE_ROLL_INDEX)
-# #define /*0x0DC*/ oGraphYOffset               OBJECT_FIELD_F32(0x15)
-# #define /*0x0E0*/ oActiveParticleFlags        OBJECT_FIELD_U32(0x16)
-# #define /*0x0E4*/ oGravity                    OBJECT_FIELD_F32(0x17)
-# #define /*0x0E8*/ oFloorHeight                OBJECT_FIELD_F32(0x18)
-# #define /*0x0EC*/ oMoveFlags                  OBJECT_FIELD_U32(0x19)
-# #define /*0x0F0*/ oAnimState                  OBJECT_FIELD_S32(0x1A)
-# // 0x0F4-0x110 (0x1B-0x22) are object specific and defined below the common fields.
-# #define /*0x114*/ oAngleVelPitch              OBJECT_FIELD_S32(0x23)
-# #define /*0x118*/ oAngleVelYaw                OBJECT_FIELD_S32(0x24)
-# #define /*0x11C*/ oAngleVelRoll               OBJECT_FIELD_S32(0x25)
-# #define /*0x120*/ oAnimations                 OBJECT_FIELD_ANIMS(0x26)
-# #define /*0x124*/ oHeldState                  OBJECT_FIELD_U32(0x27)
-# #define /*0x128*/ oWallHitboxRadius           OBJECT_FIELD_F32(0x28)
-# #define /*0x12C*/ oDragStrength               OBJECT_FIELD_F32(0x29)
-# #define /*0x130*/ oInteractType               OBJECT_FIELD_U32(0x2A)
-# #define /*0x134*/ oInteractStatus             OBJECT_FIELD_S32(0x2B)
-# #define /*0x138*/ O_PARENT_RELATIVE_POS_INDEX 0x2C
-# #define /*0x138*/ oParentRelativePosX         OBJECT_FIELD_F32(O_PARENT_RELATIVE_POS_INDEX + 0)
-# #define /*0x13C*/ oParentRelativePosY         OBJECT_FIELD_F32(O_PARENT_RELATIVE_POS_INDEX + 1)
-# #define /*0x140*/ oParentRelativePosZ         OBJECT_FIELD_F32(O_PARENT_RELATIVE_POS_INDEX + 2)
-# #define /*0x144*/ oBehParams2ndByte           OBJECT_FIELD_S32(0x2F)
-# // 0x148 unused, possibly a third param byte.
-# #define /*0x14C*/ oAction                     OBJECT_FIELD_S32(0x31)
-# #define /*0x150*/ oSubAction                  OBJECT_FIELD_S32(0x32)
-# #define /*0x154*/ oTimer                      OBJECT_FIELD_S32(0x33)
-# #define /*0x158*/ oBounciness                 OBJECT_FIELD_F32(0x34)
-# #define /*0x15C*/ oDistanceToMario            OBJECT_FIELD_F32(0x35)
-# #define /*0x160*/ oAngleToMario               OBJECT_FIELD_S32(0x36)
-# #define /*0x164*/ oHomeX                      OBJECT_FIELD_F32(0x37)
-# #define /*0x168*/ oHomeY                      OBJECT_FIELD_F32(0x38)
-# #define /*0x16C*/ oHomeZ                      OBJECT_FIELD_F32(0x39)
-# #define /*0x170*/ oFriction                   OBJECT_FIELD_F32(0x3A)
-# #define /*0x174*/ oBuoyancy                   OBJECT_FIELD_F32(0x3B)
-# #define /*0x178*/ oSoundStateID               OBJECT_FIELD_S32(0x3C)
-# #define /*0x17C*/ oOpacity                    OBJECT_FIELD_S32(0x3D)
-# #define /*0x180*/ oDamageOrCoinValue          OBJECT_FIELD_S32(0x3E)
-# #define /*0x184*/ oHealth                     OBJECT_FIELD_S32(0x3F)
-# #define /*0x188*/ oBehParams                  OBJECT_FIELD_S32(0x40)
-# #define /*0x18C*/ oPrevAction                 OBJECT_FIELD_S32(0x41)
-# #define /*0x190*/ oInteractionSubtype         OBJECT_FIELD_U32(0x42)
-# #define /*0x194*/ oCollisionDistance          OBJECT_FIELD_F32(0x43)
-# #define /*0x198*/ oNumLootCoins               OBJECT_FIELD_S32(0x44)
-# #define /*0x19C*/ oDrawingDistance            OBJECT_FIELD_F32(0x45)
-# #define /*0x1A0*/ oRoom                       OBJECT_FIELD_S32(0x46)
-# #define /*0x1A4*/ oSyncDeath                  OBJECT_FIELD_U32(0x47)
-# #define /*0x1A8*/ oUnk1A8                     OBJECT_FIELD_U32(0x48)
-# // 0x1AC-0x1B2 (0x48-0x4A) are object specific and defined below the common fields.
-# #define /*0x1B4*/ oWallAngle                  OBJECT_FIELD_S32(0x4B)
-# #define /*0x1B8*/ oFloorType                  OBJECT_FIELD_S16(0x4C, 0)
-# #define /*0x1BA*/ oFloorRoom                  OBJECT_FIELD_S16(0x4C, 1)
-# #define /*0x1BC*/ oAngleToHome                OBJECT_FIELD_S32(0x4D)
-# #define /*0x1C0*/ oFloor                      OBJECT_FIELD_SURFACE(0x4E)
-# #define /*0x1C4*/ oDeathSound                 OBJECT_FIELD_S32(0x4F)
-
+OBJECT_FLAGS = {
+    (1 <<  0): "OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE",
+    (1 <<  1): "OBJ_FLAG_MOVE_XZ_USING_FVEL",
+    (1 <<  2): "OBJ_FLAG_MOVE_Y_WITH_TERMINAL_VEL",
+    (1 <<  3): "OBJ_FLAG_SET_FACE_YAW_TO_MOVE_YAW",
+    (1 <<  4): "OBJ_FLAG_SET_FACE_ANGLE_TO_MOVE_ANGLE",
+    (1 <<  5): "OBJ_FLAG_0020",
+    (1 <<  6): "OBJ_FLAG_COMPUTE_DIST_TO_MARIO",
+    (1 <<  7): "OBJ_FLAG_ACTIVE_FROM_AFAR",
+    (1 <<  8): "OBJ_FLAG_0100",
+    (1 <<  9): "OBJ_FLAG_TRANSFORM_RELATIVE_TO_PARENT",
+    (1 << 10): "OBJ_FLAG_HOLDABLE",
+    (1 << 11): "OBJ_FLAG_SET_THROW_MATRIX_FROM_TRANSFORM",
+    (1 << 12): "OBJ_FLAG_1000",
+    (1 << 13): "OBJ_FLAG_COMPUTE_ANGLE_TO_MARIO",
+    (1 << 14): "OBJ_FLAG_PERSISTENT_RESPAWN",
+    (1 << 15): "OBJ_FLAG_8000",
+    (1 << 30): "OBJ_FLAG_30",
 }
