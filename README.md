@@ -34,6 +34,6 @@ If the program doesn't start, you might need to install some Python packages:
 
 - actors: DONE
 - textures: DONE
-- behaviors: 0%
+- behaviors: 1%
 - collisions: 0%
 - levels: 0%

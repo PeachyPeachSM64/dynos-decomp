@@ -1,7 +1,7 @@
 import os
-from . import prints
-from .gbi import *
-from .gfxdata import GfxData
+from .. import prints
+from ..consts.gbi import *
+from ..gfxdata import GfxData
 
 
 class GfxCtx:
@@ -426,30 +426,31 @@ GFX_COMMANDS = {
 }
 
 
-def write_model_inc_c(dirpath: str, model_name: str, gfxdata: GfxData):
+@GfxData.writer()
+def write_model_inc_c(self: GfxData, dirpath: str, model_name: str):
     with open(os.path.join(dirpath, "model.inc.c"), "w", newline="\n") as models_inc_c:
 
         # Write lights
-        for name, light in gfxdata.lights.items():
+        for name, light in self.lights.items():
             models_inc_c.write("Light_t %s[] = {{{0x%02X, 0x%02X, 0x%02X}, 0, {0x%02X, 0x%02X, 0x%02X}, 0, {%d, %d, %d}, 0}};" % (
                 name, light.cr, light.cg, light.cb, light.c2r, light.c2g, light.c2b, light.dx, light.dy, light.dz
             ))
             models_inc_c.write("\n\n")
 
-        for name, ambient in gfxdata.ambients.items():
+        for name, ambient in self.ambients.items():
             models_inc_c.write("Ambient_t %s[] = {{{0x%02X, 0x%02X, 0x%02X}, 0, {0x%02X, 0x%02X, 0x%02X}, 0}};" % (
                 name, ambient.cr, ambient.cg, ambient.cb, ambient.c2r, ambient.c2g, ambient.c2b
             ))
             models_inc_c.write("\n\n")
 
-        for name, lights1 in gfxdata.lights1.items():
+        for name, lights1 in self.lights1.items():
             models_inc_c.write("Lights1 %s = gdSPDefLights1(0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X);" % (
                 name, lights1.ar, lights1.ag, lights1.ab, lights1.r1, lights1.g1, lights1.b1, lights1.x1, lights1.y1, lights1.z1
             ))
             models_inc_c.write("\n\n")
 
         # Write textures
-        for name, texture in gfxdata.textures.items():
+        for name, texture in self.textures.items():
             models_inc_c.write("Texture %s[] = \"actors/%s/%s.rgba32\";" % (
                 name, model_name, texture.ref or name
             ))
@@ -457,7 +458,7 @@ def write_model_inc_c(dirpath: str, model_name: str, gfxdata: GfxData):
             texture.write(os.path.join(dirpath, name + ".rgba32.png"))
 
         # Write vertex arrays
-        for name, vtxarr in gfxdata.vertices.items():
+        for name, vtxarr in self.vertices.items():
             models_inc_c.write("Vtx %s[] = {\n" % (name))
             for vtx in vtxarr.buffer:
                 models_inc_c.write("    {{{%d, %d, %d}, 0x%X, {%d, %d}, {0x%02X, 0x%02X, 0x%02X, 0x%02X}}},\n" % (
@@ -466,11 +467,11 @@ def write_model_inc_c(dirpath: str, model_name: str, gfxdata: GfxData):
             models_inc_c.write("};\n\n")
 
         # Write display lists
-        for name, displaylist in gfxdata.displaylists.items():
+        for name, displaylist in self.displaylists.items():
             models_inc_c.write("Gfx %s[] = {\n" % (name))
             i = 0
             while i < len(displaylist.buffer):
-                ctx = GfxCtx(displaylist.buffer[i:], gfxdata)
+                ctx = GfxCtx(displaylist.buffer[i:], self)
                 op = C(ctx.w0, 24, 8)
                 cmd = GFX_COMMANDS.get(op)
                 if cmd:

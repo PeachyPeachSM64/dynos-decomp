@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
-from .consts import PNTR
-from .read import *
+from ..consts.consts import PNTR
+from ..read import *
 
 
 @dataclass

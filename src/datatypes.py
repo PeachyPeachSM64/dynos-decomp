@@ -97,7 +97,7 @@ DATA_TYPES = {
 },
 22: {
     "name": "BEHAVIOR_SCRIPT",
-    "read": not_implemented,
+    "read": GfxData.read_behavior,
 },
 23: {
     "name": "UNUSED",

@@ -1,6 +1,6 @@
 import os
-from . import prints
-from .gfxdata import GfxData
+from .. import prints
+from ..gfxdata import GfxData
 
 
 GEO_CONSTANTS = {
@@ -488,9 +488,10 @@ def value_to_str(value: int, shift: int, width: int, argtype: str):
     return ("0x%X" if argtype == "x" else "%d") % (value)
 
 
-def write_geo_inc_c(dirpath: str, gfxdata: GfxData):
+@GfxData.writer()
+def write_geo_inc_c(self: GfxData, dirpath: str):
     with open(os.path.join(dirpath, "geo.inc.c"), "w", newline="\n") as geo_inc_c:
-        for name, geolayout in gfxdata.geolayouts.items():
+        for name, geolayout in self.geolayouts.items():
             geo_inc_c.write("GeoLayout %s[] = {\n" % (name))
             level = 1
             index = 0

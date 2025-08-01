@@ -1,8 +1,3 @@
-FUNC = 0x434E5546
-PNTR = 0x52544E50
-LUAV = 0x5641554C
-TEXR = 0x52584554
-
 FUNCTION_NAMES = [
     "geo_mirror_mario_set_alpha",
     "geo_switch_mario_stand_run",

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from .read import *
+from ..read import *
 
 
 F32VTX_SENTINEL_0 = 0x3346

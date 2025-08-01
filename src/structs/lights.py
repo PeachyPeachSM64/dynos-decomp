@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from .read import *
+from ..read import *
 
 
 @dataclass

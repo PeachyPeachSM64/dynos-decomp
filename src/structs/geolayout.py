@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
-from .consts import FUNC, PNTR, LUAV, FUNCTION_NAMES
-from .read import *
+from ..consts.consts import FUNC, PNTR, LUAV
+from ..consts.functions import FUNCTION_NAMES
+from ..read import *
 
 
 @dataclass

@@ -1,11 +1,12 @@
 import os
-from .gfxdata import GfxData
+from ..gfxdata import GfxData
 
 
-def write_animations(dirpath: str, gfxdata: GfxData):
-    if gfxdata.animations:
+@GfxData.writer()
+def write_animations(self: GfxData, dirpath: str):
+    if self.animations:
         os.makedirs(os.path.join(dirpath, "anims"), exist_ok=True)
-        for anim_name, animation in gfxdata.animations.items():
+        for anim_name, animation in self.animations.items():
             with open(os.path.join(dirpath, "anims/%s.inc.c" % (anim_name)), "w", newline="\n") as anim_inc_c:
                 anim_inc_c.write("static const struct Animation %s = {\n" % (anim_name))
                 anim_inc_c.write("    %d,\n" % (animation.flags))
@@ -32,11 +33,12 @@ def write_animations(dirpath: str, gfxdata: GfxData):
                 anim_inc_c.write("\n};\n")
 
 
-def write_animation_table(dirpath: str, gfxdata: GfxData):
-    if gfxdata.animation_table:
+@GfxData.writer()
+def write_animation_table(self: GfxData, dirpath: str):
+    if self.animation_table:
         os.makedirs(os.path.join(dirpath, "anims"), exist_ok=True)
         with open(os.path.join(dirpath, "anims/table.inc.c"), "w", newline="\n") as table_inc_c:
             table_inc_c.write("const struct Animation *const anims[] = {\n")
-            for anim_name in gfxdata.animation_table:
+            for anim_name in self.animation_table:
                 table_inc_c.write("    %s%s,\n" % ("&" if anim_name != "NULL" else "", anim_name))
             table_inc_c.write("};\n")

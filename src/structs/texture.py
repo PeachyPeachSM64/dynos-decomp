@@ -1,8 +1,8 @@
 import png
 from dataclasses import dataclass, field
-from . import prints
-from .consts import TEXR
-from .read import *
+from .. import prints
+from ..consts.consts import TEXR
+from ..read import *
 
 # Image formats
 G_IM_FMT_RGBA = 0

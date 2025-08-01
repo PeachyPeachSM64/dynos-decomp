@@ -1,9 +1,7 @@
 import os, zlib
 from . import prints
 from .gfxdata import GfxData
-from .modelincc import write_model_inc_c
-from .geoincc import write_geo_inc_c
-from .anims import write_animations, write_animation_table
+from .write import geolayouts, displaylists, animations, behaviors
 
 
 def is_compressed(data: bytes) -> bool:
@@ -64,10 +62,10 @@ def decomp_actor(filepath: str):
     prints.info("--------------------------------")
     prints.info("")
 
-    write_model_inc_c(dirpath, model_name, gfxdata)
-    write_geo_inc_c(dirpath, gfxdata)
-    write_animations(dirpath, gfxdata)
-    write_animation_table(dirpath, gfxdata)
+    gfxdata.write_model_inc_c(dirpath, model_name)
+    gfxdata.write_geo_inc_c(dirpath)
+    gfxdata.write_animations(dirpath)
+    gfxdata.write_animation_table(dirpath)
     prints.info("")
     prints.info(f"\033[0;32mModel files extracted successfully to `{dirpath}`\033[0m")
     prints.info("")
@@ -91,6 +89,25 @@ def decomp_texture(filepath: str):
     prints.info("")
 
 
+def decomp_behavior(filepath: str):
+    data, _ = get_raw_data(filepath, False)
+    gfxdata = GfxData.read(data)
+    dirpath = get_dest_filepath(filepath, ".bhv", "")
+    os.makedirs(dirpath, exist_ok=True)
+    behavior_data_filepath = os.path.join(dirpath, "behavior_data.c")
+
+    prints.info("")
+    prints.info("--------------------------------")
+    prints.info(f"behaviors: {list(gfxdata.behaviors.keys())}")
+    prints.info("--------------------------------")
+    prints.info("")
+
+    # write_behavior_data_c(behavior_data_filepath, gfxdata)
+    prints.info("")
+    prints.info(f"\033[0;32mBehavior files extracted successfully to `{dirpath}`\033[0m")
+    prints.info("")
+
+
 DECOMP_TABLE = {
     ".bin": {
         "name": "DynOS actor files",
@@ -101,6 +118,11 @@ DECOMP_TABLE = {
         "name": "DynOS texture files",
         "compressed": False,
         "decomp": decomp_texture
+    },
+    ".bhv": {
+        "name": "DynOS behavior files",
+        "compressed": False,
+        "decomp": decomp_behavior
     }
 }
 

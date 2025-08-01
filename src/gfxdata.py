@@ -1,12 +1,13 @@
 from dataclasses import dataclass, field
 from . import prints
 from .read import *
-from .lights import Light, Ambient, Lights1
-from .texture import Texture
-from .vertex import VertexArray
-from .displaylist import DisplayList
-from .geolayout import GeoLayout
-from .animation import Animation
+from .structs.lights import Light, Ambient, Lights1
+from .structs.texture import Texture
+from .structs.vertex import VertexArray
+from .structs.displaylist import DisplayList
+from .structs.geolayout import GeoLayout
+from .structs.animation import Animation
+from .structs.behavior import BehaviorScript
 
 
 @dataclass
@@ -20,7 +21,15 @@ class GfxData:
     geolayouts: dict[str, GeoLayout] = field(default_factory=lambda: {})
     animations: dict[str, Animation] = field(default_factory=lambda: {})
     animation_table: list[str] = field(default_factory=lambda: [])
+    behaviors: dict[str, BehaviorScript] = field(default_factory=lambda: {})
     priority: int = 0
+
+    @staticmethod
+    def writer():
+        def writer(func):
+            setattr(GfxData, func.__name__, func)
+            return func
+        return writer
 
     def read_light(self, buffer: bytes, index: int):
         name, index = read_name(buffer, index)
@@ -79,6 +88,12 @@ class GfxData:
     def read_animation_table(self, buffer: bytes, index: int):
         name, index = read_name(buffer, index)
         self.animation_table.append(name)
+        return index, name
+
+    def read_behavior(self, buffer: bytes, index: int):
+        name, index = read_name(buffer, index)
+        data, index = BehaviorScript.read(buffer, index)
+        self.behaviors[name] = data
         return index, name
 
     def read_priority(self, buffer: bytes, index: int):
