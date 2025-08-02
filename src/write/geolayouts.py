@@ -1,6 +1,7 @@
 import os
 from .. import prints
 from ..gfxdata import GfxData
+from .values import define_command, value_to_str
 
 
 GEO_CONSTANTS = {
@@ -69,7 +70,6 @@ def CMD_BBBB(a, b, c, d):
         {"value": d, "shift": 24, "width": 8},
     ]
 
-
 def CMD_BBH(a, b, c):
     return [
         {"value": a, "shift": 0, "width": 8},
@@ -77,51 +77,26 @@ def CMD_BBH(a, b, c):
         {"value": c, "shift": 16, "width": 16},
     ]
 
-
 def CMD_HH(a, b):
     return [
         {"value": a, "shift": 0, "width": 16},
         {"value": b, "shift": 16, "width": 16},
     ]
 
-
 def CMD_W(a):
     return [
         {"value": a, "shift": 0, "width": 32},
     ]
-
 
 def CMD_PTR(a):
     return [
         {"value": a},
     ]
 
-
 def define_geo_command(name: str, argnames: str, bits_12_15: int|None, *commands):
-    args = []
-    for argname in argnames.split(","):
-        for index, command in enumerate(commands):
-            for x in command:
-                if isinstance(x["value"], str):
-                    xname = x["value"]
-                    xtype = "u"
-                    sep = xname.find(":")
-                    if sep != -1:
-                        xtype = xname[sep+1:]
-                        xname = xname[:sep]
-                    if xname == argname.strip():
-                        args.append({
-                            "index": index,
-                            "value": xname,
-                            "type": xtype,
-                            **{ k: v for k, v in x.items() if k != "value" }
-                        })
     return {
-        "name": name,
-        "cmd": commands[0][0]["value"],
-        "size": len(commands),
+        **define_command(name, argnames, *commands),
         "bits_12_15": bits_12_15,
-        "args": args
     }
 
 
@@ -474,18 +449,10 @@ define_geo_command(
 
 ]
 
-
-def value_to_str(value: int, shift: int, width: int, argtype: str):
-    limit = (1 << width)
-    value = ((value >> shift) & (limit - 1))
-
-    # Signed value
-    if argtype == "s":
-        half = (limit >> 1)
-        value = value if value < half else value - limit
-
-    # (Hexa)decimal
-    return ("0x%X" if argtype == "x" else "%d") % (value)
+GEO_COMMANDS_LEVELS = {
+    "GEO_OPEN_NODE": +1,
+    "GEO_CLOSE_NODE": -1,
+}
 
 
 @GfxData.writer()
@@ -501,7 +468,7 @@ def write_geo_inc_c(self: GfxData, dirpath: str):
                 bits_12_15 = (buffer[index] & 0xF000) >> 12
                 for geo_command in GEO_COMMANDS:
                     if geo_command["cmd"] == cmd and (geo_command["bits_12_15"] is None or geo_command["bits_12_15"] == bits_12_15):
-                        level -= (cmd == 0x05)
+                        level += min(0, GEO_COMMANDS_LEVELS.get(geo_command["name"], 0))
                         geo_inc_c.write("    " * level)
                         geo_inc_c.write(geo_command["name"] + "(")
                         args_str = ""
@@ -524,7 +491,7 @@ def write_geo_inc_c(self: GfxData, dirpath: str):
 
                             args_str += value_str + ", "
                         geo_inc_c.write((args_str[:-2] if args_str else "") + "),\n")
-                        level += (cmd == 0x04)
+                        level += max(0, GEO_COMMANDS_LEVELS.get(geo_command["name"], 0))
                         index += geo_command["size"]
                         break
                 else:

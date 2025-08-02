@@ -1,9 +1,9 @@
-import os
 from .. import prints
 from ..consts.bhv import BEHAVIOR_IDS
-from ..consts.objects import OBJECT_FIELDS
+from ..consts.objects import OBJECT_FIELDS, OBJECT_FLAGS
 from ..consts.models import MODEL_IDS
 from ..gfxdata import GfxData
+from .values import define_command, value_to_str, get_named_flags
 
 
 INTERACT_TYPES = {
@@ -105,27 +105,27 @@ BEHAVIOR_CONSTANTS = {
         for i, name in enumerate(BEHAVIOR_IDS)
     }},
     "field": {
-        str(i): name
+        ("0x%X" % (i)): name
         for i, name in OBJECT_FIELDS.items()
     },
     "field1": {
-        str(i): name
+        ("0x%X" % (i)): name
         for i, name in OBJECT_FIELDS.items()
     },
     "field2": {
-        str(i): name
+        ("0x%X" % (i)): name
         for i, name in OBJECT_FIELDS.items()
     },
     "modelID": {
-        str(i): name
+        ("0x%X" % (i)): name
         for i, name in MODEL_IDS.items()
     },
     "interactType": {
-        str(i): name
+        ("0x%X" % (i)): name
         for i, name in INTERACT_TYPES.items()
     },
     "interactSubtype": {
-        str(i): name
+        ("0x%X" % (i)): name
         for i, name in INTERACT_SUBTYPES.items()
     },
 }
@@ -185,302 +185,275 @@ def BC_PTR(a):
     ]
 
 
-def define_behavior_command(name: str, argnames: str, *commands):
-    args = []
-    for argname in argnames.split(","):
-        for index, command in enumerate(commands):
-            for x in command:
-                if isinstance(x["value"], str):
-                    xname = x["value"]
-                    xtype = "u"
-                    sep = xname.find(":")
-                    if sep != -1:
-                        xtype = xname[sep+1:]
-                        xname = xname[:sep]
-                    if xname == argname.strip():
-                        args.append({
-                            "index": index,
-                            "value": xname,
-                            "type": xtype,
-                            **{ k: v for k, v in x.items() if k != "value" }
-                        })
-    return {
-        "name": name,
-        "cmd": commands[0][0]["value"],
-        "size": len(commands),
-        "args": args
-    }
-
-
 BEHAVIOR_COMMANDS = [
 
-define_behavior_command(
+define_command(
     "BEGIN",
     "objList",
         BC_BB(0x00, "objList")
 ),
-define_behavior_command(
+define_command(
     "DELAY",
     "num",
         BC_B0H(0x01, "num:u")
 ),
-define_behavior_command(
+define_command(
     "CALL",
     "addr",
         BC_B(0x02),
         BC_PTR("addr")
 ),
-define_behavior_command(
+define_command(
     "RETURN",
     "",
         BC_B(0x03)
 ),
-define_behavior_command(
+define_command(
     "GOTO",
     "addr",
         BC_B(0x04),
         BC_PTR("addr")
 ),
-define_behavior_command(
+define_command(
     "BEGIN_REPEAT",
     "count",
         BC_B0H(0x05, "count:u")
 ),
-define_behavior_command(
+define_command(
     "END_REPEAT",
     "",
         BC_B(0x06)
 ),
-define_behavior_command(
+define_command(
     "END_REPEAT_CONTINUE",
     "",
         BC_B(0x07)
 ),
-define_behavior_command(
+define_command(
     "BEGIN_LOOP",
     "",
         BC_B(0x08)
 ),
-define_behavior_command(
+define_command(
     "END_LOOP",
     "",
         BC_B(0x09)
 ),
-define_behavior_command(
+define_command(
     "BREAK",
     "",
         BC_B(0x0A)
 ),
-define_behavior_command(
+define_command(
     "BREAK_UNUSED",
     "",
         BC_B(0x0B)
 ),
-define_behavior_command(
+define_command(
     "CALL_NATIVE",
     "func",
         BC_B(0x0C),
         BC_PTR("func")
 ),
-define_behavior_command(
+define_command(
     "ADD_FLOAT",
     "field, value",
-        BC_BBH(0x0D, "field", "value:s")
+        BC_BBH(0x0D, "field:x", "value:s")
 ),
-define_behavior_command(
+define_command(
     "SET_FLOAT",
     "field, value",
-        BC_BBH(0x0E, "field", "value:s")
+        BC_BBH(0x0E, "field:x", "value:s")
 ),
-define_behavior_command(
+define_command(
     "ADD_INT",
     "field, value",
-        BC_BBH(0x0F, "field", "value:s")
+        BC_BBH(0x0F, "field:x", "value:s")
 ),
-define_behavior_command( # TODO: with oInteractType, use INTERACT_TYPES; with oInteractionSubtype, use INTERACT_SUBTYPES
+define_command(
     "SET_INT",
     "field, value",
-        BC_BBH(0x10, "field", "value:s")
+        BC_BBH(0x10, "field:x", "value:s")
 ),
-define_behavior_command( # TODO: with oFlags, use OBJECT_FLAGS
+define_command(
     "OR_INT",
     "field, value",
-        BC_BBH(0x11, "field", "value:s")
+        BC_BBH(0x11, "field:x", "value:s")
 ),
-define_behavior_command(
+define_command(
     "BIT_CLEAR",
     "field, value",
-        BC_BBH(0x12, "field", "value:x")
+        BC_BBH(0x12, "field:x", "value:x")
 ),
-define_behavior_command(
+define_command(
     "SET_INT_RAND_RSHIFT",
     "field, min, rshift",
-        BC_BBH(0x13, "field", "min:s"),
+        BC_BBH(0x13, "field:x", "min:s"),
         BC_H("rshift:u")
 ),
-define_behavior_command(
+define_command(
     "SET_RANDOM_FLOAT",
     "field, min, range",
-        BC_BBH(0x14, "field", "min:s"),
+        BC_BBH(0x14, "field:x", "min:s"),
         BC_H("range:u")
 ),
-define_behavior_command(
+define_command(
     "SET_RANDOM_INT",
     "field, min, range",
-        BC_BBH(0x15, "field", "min:s"),
+        BC_BBH(0x15, "field:x", "min:s"),
         BC_H("range:u")
 ),
-define_behavior_command(
+define_command(
     "ADD_RANDOM_FLOAT",
     "field, min, range",
-        BC_BBH(0x16, "field", "min:s"),
+        BC_BBH(0x16, "field:x", "min:s"),
         BC_H("range:u")
 ),
-define_behavior_command(
+define_command(
     "ADD_INT_RAND_RSHIFT",
     "field, min, rshift",
-        BC_BBH(0x17, "field", "min:s"),
+        BC_BBH(0x17, "field:x", "min:s"),
         BC_H("rshift:u")
 ),
-define_behavior_command(
+define_command(
     "CMD_NOP_1",
     "field",
-        BC_BB(0x18, "field")
+        BC_BB(0x18, "field:x")
 ),
-define_behavior_command(
+define_command(
     "CMD_NOP_2",
     "field",
-        BC_BB(0x19, "field")
+        BC_BB(0x19, "field:x")
 ),
-define_behavior_command(
+define_command(
     "CMD_NOP_3",
     "field",
-        BC_BB(0x1A, "field")
+        BC_BB(0x1A, "field:x")
 ),
-define_behavior_command(
+define_command(
     "SET_MODEL",
     "modelID",
-        BC_B0H(0x1B, "modelID")
+        BC_B0H(0x1B, "modelID:x")
 ),
-define_behavior_command(
+define_command(
     "SPAWN_CHILD",
     "modelID, behavior",
         BC_B(0x1C),
-        BC_W("modelID"),
+        BC_W("modelID:x"),
         BC_PTR("behavior")
 ),
-define_behavior_command(
+define_command(
     "DEACTIVATE",
     "",
         BC_B(0x1D)
 ),
-define_behavior_command(
+define_command(
     "DROP_TO_FLOOR",
     "",
         BC_B(0x1E)
 ),
-define_behavior_command(
+define_command(
     "SUM_FLOAT",
     "field, field1, field2",
-        BC_BBBB(0x1F, "field", "field1", "field2")
+        BC_BBBB(0x1F, "field:x", "field1:x", "field2:x")
 ),
-define_behavior_command(
+define_command(
     "SUM_INT",
     "field, field1, field2",
-        BC_BBBB(0x20, "field", "field1", "field2")
+        BC_BBBB(0x20, "field:x", "field1:x", "field2:x")
 ),
-define_behavior_command(
+define_command(
     "BILLBOARD",
     "",
         BC_B(0x21)
 ),
-define_behavior_command(
+define_command(
     "CYLBOARD",
     "",
         BC_B(0x38)
 ),
-define_behavior_command(
+define_command(
     "HIDE",
     "",
         BC_B(0x22)
 ),
-define_behavior_command(
+define_command(
     "SET_HITBOX",
     "radius, height",
         BC_B(0x23),
         BC_HH("radius:u", "height:u")
 ),
-define_behavior_command(
+define_command(
     "CMD_NOP_4",
     "field, value",
-        BC_BBH(0x24, "field", "value")
+        BC_BBH(0x24, "field:x", "value")
 ),
-define_behavior_command(
+define_command(
     "DELAY_VAR",
     "field",
-        BC_BB(0x25, "field")
+        BC_BB(0x25, "field:x")
 ),
-define_behavior_command(
+define_command(
     "BEGIN_REPEAT_UNUSED",
     "count",
         BC_BB(0x26, "count:u")
 ),
-define_behavior_command(
+define_command(
     "LOAD_ANIMATIONS",
     "field, anims",
-        BC_BB(0x27, "field"),
+        BC_BB(0x27, "field:x"),
         BC_PTR("anims")
 ),
-define_behavior_command(
+define_command(
     "ANIMATE",
     "animIndex",
         BC_BB(0x28, "animIndex")
 ),
-define_behavior_command(
+define_command(
     "SPAWN_CHILD_WITH_PARAM",
     "bhvParam, modelID, behavior",
         BC_B0H(0x29, "bhvParam:u"),
-        BC_W("modelID"),
+        BC_W("modelID:x"),
         BC_PTR("behavior")
 ),
-define_behavior_command(
+define_command(
     "LOAD_COLLISION_DATA",
     "collisionData",
         BC_B(0x2A),
         BC_PTR("collisionData")
 ),
-define_behavior_command(
+define_command(
     "SET_HITBOX_WITH_OFFSET",
     "radius, height, downOffset",
         BC_B(0x2B),
         BC_HH("radius:u", "height:u"),
         BC_H("downOffset:u")
 ),
-define_behavior_command(
-    "SPAWN_CHILD",
+define_command(
+    "SPAWN_OBJ",
     "modelID, behavior",
         BC_B(0x2C),
-        BC_W("modelID"),
+        BC_W("modelID:x"),
         BC_PTR("behavior")
 ),
-define_behavior_command(
+define_command(
     "SET_HOME",
     "",
         BC_B(0x2D)
 ),
-define_behavior_command(
+define_command(
     "SET_HURTBOX",
     "radius, height",
         BC_B(0x2E),
         BC_HH("radius:u", "height:u")
 ),
-define_behavior_command(
+define_command(
     "SET_INTERACT_TYPE",
     "interactType",
         BC_B(0x2F),
-        BC_W("interactType")
+        BC_W("interactType:x")
 ),
-define_behavior_command(
+define_command(
     "SET_OBJ_PHYSICS",
     "wallHitboxRadius, gravity, bounciness, dragStrength, friction, buoyancy, unused1, unused2",
         BC_B(0x30),
@@ -489,102 +462,102 @@ define_behavior_command(
         BC_HH("friction:u", "buoyancy:u"),
         BC_HH("unused1:u", "unused2:u")
 ),
-define_behavior_command(
+define_command(
     "SET_INTERACT_SUBTYPE",
     "interactSubtype",
         BC_B(0x31),
-        BC_W("interactSubtype")
+        BC_W("interactSubtype:x")
 ),
-define_behavior_command(
+define_command(
     "SCALE",
     "unused, percent",
         BC_BBH(0x32, "unused", "percent:u")
 ),
-define_behavior_command( # TODO: oActiveParticleFlags -> ACTIVE_PARTICLES
+define_command(
     "PARENT_BIT_CLEAR",
     "field, value",
-        BC_BB(0x33, "field"),
+        BC_BB(0x33, "field:x"),
         BC_W("value:x")
 ),
-define_behavior_command(
+define_command(
     "ANIMATE_TEXTURE",
     "field, rate",
-        BC_BBH("0x34", "field", "rate:u")
+        BC_BBH(0x34, "field:x", "rate:u")
 ),
-define_behavior_command(
+define_command(
     "DISABLE_RENDERING",
     "",
         BC_B(0x35)
 ),
-define_behavior_command(
+define_command(
     "SET_INT_UNUSED",
     "field, value",
-        BC_BB(0x36, "field"),
+        BC_BB(0x36, "field:x"),
         BC_HH(0, "value:u")
 ),
-# define_behavior_command(
+# define_command(
 #     "SPAWN_WATER_DROPLET",
 #     "dropletParams",
 #         BC_B(0x37),
 #         BC_PTR("dropletParams")
 # ),
-define_behavior_command(
+define_command(
     "ID",
     "id",
         BC_B0H(0x39, "id")
 ),
-define_behavior_command(
+define_command(
     "CALL",
     "addr",
         BC_B(0x3A),
         BC_PTR("addr")
 ),
-define_behavior_command(
+define_command(
     "GOTO",
     "addr",
         BC_B(0x3B),
         BC_PTR("addr")
 ),
-define_behavior_command(
+define_command(
     "CALL_NATIVE",
     "func",
         BC_B(0x3C),
         BC_PTR("func")
 ),
-define_behavior_command(
+define_command(
     "SPAWN_CHILD",
     "modelID, behavior",
         BC_B(0x3D),
-        BC_W("modelID"),
+        BC_W("modelID:x"),
         BC_PTR("behavior")
 ),
-define_behavior_command(
+define_command(
     "SPAWN_CHILD_WITH_PARAM",
     "bhvParam, modelID, behavior",
         BC_B0H(0x3E, "bhvParam:u"),
-        BC_W("modelID"),
+        BC_W("modelID:x"),
         BC_PTR("behavior")
 ),
-define_behavior_command(
+define_command(
     "SPAWN_OBJ",
     "modelID, behavior",
         BC_B(0x3F),
-        BC_W("modelID"),
+        BC_W("modelID:x"),
         BC_PTR("behavior")
 ),
-define_behavior_command(
+define_command(
     "LOAD_ANIMATIONS",
     "field, anims",
-        BC_BB(0x40, "field"),
+        BC_BB(0x40, "field:x"),
         BC_PTR("anims")
 ),
-define_behavior_command(
+define_command(
     "LOAD_COLLISION_DATA",
     "collisionData",
         BC_B(0x41),
         BC_PTR("collisionData")
 ),
-# define_behavior_command(
+# define_command(
 #     "CALL_LUA_FUNC",
 #     "func",
 #         BC_B(0x42),
@@ -593,29 +566,66 @@ define_behavior_command(
 
 ]
 
+BEHAVIOR_COMMANDS_LEVELS = {
+    "BEGIN_LOOP": +1,
+    "END_LOOP": -1,
+    "BEGIN_REPEAT": +1,
+    "END_REPEAT": -1,
+}
+
+BEHAVIOR_VALUES = {
+    "oFlags": lambda flags: get_named_flags(flags, OBJECT_FLAGS),
+    "oInteractType": lambda interactType: INTERACT_TYPES[interactType],
+    "oInteractionSubtype": lambda interactSubtypes: get_named_flags(interactSubtypes, INTERACT_SUBTYPES),
+    "oActiveParticleFlags": lambda flags: get_named_flags(flags, ACTIVE_PARTICLES),
+}
 
 
+@GfxData.writer()
+def write_behavior_data_c(self: GfxData, behavior_data_filepath: str, append_mode: bool):
+    with open(behavior_data_filepath, "a" if append_mode else "w", newline="\n") as behavior_data_c:
+        for name, behavior in self.behaviors.items():
+            behavior_data_c.write("const BehaviorScript %s[] = {\n" % (name))
+            level = 1
+            index = 0
+            buffer = behavior.buffer
+            while index < len(buffer):
+                cmd = ((buffer[index] >> 24) & 0xFF)
+                for bhv_command in BEHAVIOR_COMMANDS:
+                    if bhv_command["cmd"] == cmd:
+                        level += min(0, BEHAVIOR_COMMANDS_LEVELS.get(bhv_command["name"], 0))
+                        behavior_data_c.write("    " * level)
+                        behavior_data_c.write(bhv_command["name"] + "(")
+                        args_str = ""
+                        field = None
+                        for arg in bhv_command["args"]:
+                            value = buffer[index + arg["index"]]
+                            if "shift" in arg:
+                                value_str = value_to_str(value, arg["shift"], arg["width"], arg["type"])
+                            else:
+                                value_str = str(value)
 
-# @GfxData.writer()
-# def write_behavior_data_c(behavior_data_filepath: str, gfxdata: GfxData):
-#     with open(behavior_data_filepath, "w", newline="\n") as behavior_data_c:
-#         for name, behavior in gfxdata.behaviors.items():
-#             behavior_data_c.write("const BehaviorScript %s[] = {\n" % (name))
+                            # replace constant by its name
+                            arg_name = arg["value"]
+                            if arg_name in BEHAVIOR_CONSTANTS:
+                                if value_str in BEHAVIOR_CONSTANTS[arg_name]:
+                                    value_str = BEHAVIOR_CONSTANTS[arg_name][value_str]
+                                else:
+                                    prints.warning("Unknown value for '%s': %s" % (arg_name, value_str))
 
-#             behavior_data_c.write("};\n\n")
+                            # 'field' param
+                            if arg_name == "field":
+                                field = value_str
+                            elif arg_name == "value" and field is not None and field in BEHAVIOR_VALUES:
+                                value = int(value_str[2:], 16) if value_str.startswith("0x") else int(value_str)
+                                value_str = BEHAVIOR_VALUES[field](value)
 
-
-# const BehaviorScript bhv1Up[] = {
-#     BEGIN(OBJ_LIST_LEVEL),
-#     ID(id_bhv1Up),
-#     OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
-#     BILLBOARD(),
-#     SET_HITBOX_WITH_OFFSET(/*Radius*/ 30, /*Height*/ 30, /*Downwards offset*/ 0),
-#     SET_FLOAT(oGraphYOffset, 30),
-#     CALL_NATIVE(bhv_1up_init),
-#     BEGIN_LOOP(),
-#         SET_INT(oIntangibleTimer, 0),
-#         CALL_NATIVE(bhv_1up_loop),
-#     END_LOOP(),
-# };
-
+                            args_str += value_str + ", "
+                        behavior_data_c.write((args_str[:-2] if args_str else "") + "),\n")
+                        level += max(0, BEHAVIOR_COMMANDS_LEVELS.get(bhv_command["name"], 0))
+                        index += bhv_command["size"]
+                        break
+                else:
+                    prints.warning("Unknown behavior command: 0x%02X" % (cmd))
+                    break
+            behavior_data_c.write("};\n\n")

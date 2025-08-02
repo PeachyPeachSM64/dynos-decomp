@@ -22,6 +22,7 @@ A GUI made in Python to decompile DynOS binary files.
 
 - Actor files (`.bin`, `.bin.raw`)
 - Texture files (`.tex`)
+- Behavior files (`.bhv`)
 
 ## Troubleshooting
 
@@ -34,6 +35,6 @@ If the program doesn't start, you might need to install some Python packages:
 
 - actors: DONE
 - textures: DONE
-- behaviors: 1%
+- behaviors: DONE
 - collisions: 0%
 - levels: 0%

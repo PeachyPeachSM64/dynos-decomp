@@ -2,6 +2,7 @@ import os
 from .. import prints
 from ..consts.gbi import *
 from ..gfxdata import GfxData
+from .values import get_pointer_and_offset, get_named_flags, bnot
 
 
 class GfxCtx:
@@ -19,31 +20,6 @@ class GfxCtx:
     @property
     def w1(self):
         return self.w(0, 1)
-
-
-def bnot(x: int, bits: int) -> int:
-    mask = ((1 << bits) - 1)
-    return mask - (x & mask)
-
-
-def get_pointer_and_offset(ptr: str) -> tuple[str, int]:
-    if isinstance(ptr, int):
-        return "NULL", 0
-    if "+" in ptr:
-        name, off = [x.strip() for x in ptr.split("+")]
-        return name, int(off)
-    return ptr.strip(), 0
-
-
-def build_params_from_flags(flags: int, flagdict: dict) -> str:
-    params = []
-    for flag, param in flagdict.items():
-        if (flags & flag) == flag:
-            params.append(param)
-            flags &= bnot(flag, 32)
-    if flags != 0:
-        params.append(f"0x{flags:X}")
-    return "|".join(params) if params else "0"
 
 
 #
@@ -112,15 +88,15 @@ def g_moveword(ctx: GfxCtx):
 
 def g_mtx(ctx: GfxCtx):
     flags = C(ctx.w0, 0, 8) ^ G_MTX_PUSH
-    params = build_params_from_flags(flags, G_MTX_FLAGS)
+    params = get_named_flags(flags, G_MTX_FLAGS)
     mtx = ctx.w1
     return f"gsSPMatrix({mtx}, {params})", 0
 
 def g_geometrymode(ctx: GfxCtx):
     set_flags = ctx.w1 & 0xFFFFFF
-    set_params = build_params_from_flags(set_flags, G_GEOMETRYMODE_FLAGS)
+    set_params = get_named_flags(set_flags, G_GEOMETRYMODE_FLAGS)
     clr_flags = bnot(C(ctx.w0, 0, 24), 24) & 0xFFFFFF
-    clr_params = build_params_from_flags(clr_flags, G_GEOMETRYMODE_FLAGS)
+    clr_params = get_named_flags(clr_flags, G_GEOMETRYMODE_FLAGS)
     if clr_flags == 0xFFFFFF:
         return f"gsSPLoadGeometryMode({set_params})", 0
     if set_flags == 0:
@@ -272,11 +248,11 @@ def g_settile(ctx: GfxCtx):
     tile_str = G_SETTILE_TILES.get(tile, f"{tile}")
     palette = C(ctx.w1, 20, 4)
     cmt = C(ctx.w1, 18, 2)
-    cmt_params = build_params_from_flags(cmt, G_SETTILE_FLAGS)
+    cmt_params = get_named_flags(cmt, G_SETTILE_FLAGS)
     maskt = C(ctx.w1, 14, 4)
     shiftt = C(ctx.w1, 10, 4)
     cms = C(ctx.w1, 8, 2)
-    cms_params = build_params_from_flags(cms, G_SETTILE_FLAGS)
+    cms_params = get_named_flags(cms, G_SETTILE_FLAGS)
     masks = C(ctx.w1, 4, 4)
     shifts = C(ctx.w1, 0, 4)
     return f"gsDPSetTile({fmt_str}, {siz_str}, {line}, {tmem}, {tile_str}, {palette}, {cmt_params}, {maskt}, {shiftt}, {cms_params}, {masks}, {shifts})", 0

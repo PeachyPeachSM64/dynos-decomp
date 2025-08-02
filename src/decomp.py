@@ -44,7 +44,7 @@ def get_raw_data(filepath: str, create_dir: bool = False, ext: str|None = None) 
     return raw_data, filepath
 
 
-def decomp_actor(filepath: str):
+def decomp_actor(filepath: str, **kwargs):
     data, dirpath = get_raw_data(filepath, True, ".bin")
     model_name = dirpath.split("/")[-1]
     gfxdata = GfxData.read(data)
@@ -71,7 +71,7 @@ def decomp_actor(filepath: str):
     prints.info("")
 
 
-def decomp_texture(filepath: str):
+def decomp_texture(filepath: str, **kwargs):
     data, _ = get_raw_data(filepath)
     gfxdata = GfxData.read(data)
     texture_name, texture = next(iter(gfxdata.textures.items()))
@@ -89,12 +89,18 @@ def decomp_texture(filepath: str):
     prints.info("")
 
 
-def decomp_behavior(filepath: str):
+def decomp_behavior(filepath: str, **kwargs):
     data, _ = get_raw_data(filepath, False)
     gfxdata = GfxData.read(data)
-    dirpath = get_dest_filepath(filepath, ".bhv", "")
-    os.makedirs(dirpath, exist_ok=True)
-    behavior_data_filepath = os.path.join(dirpath, "behavior_data.c")
+    behavior_data_filepath = kwargs.get("behavior_data_filepath")
+    if behavior_data_filepath is None:
+        dirpath = get_dest_filepath(filepath, ".bhv", "")
+        os.makedirs(dirpath, exist_ok=True)
+        behavior_data_filepath = os.path.join(dirpath, "behavior_data.c")
+        append_mode = False
+    else:
+        dirpath = behavior_data_filepath
+        append_mode = True
 
     prints.info("")
     prints.info("--------------------------------")
@@ -102,7 +108,7 @@ def decomp_behavior(filepath: str):
     prints.info("--------------------------------")
     prints.info("")
 
-    # write_behavior_data_c(behavior_data_filepath, gfxdata)
+    gfxdata.write_behavior_data_c(behavior_data_filepath, append_mode)
     prints.info("")
     prints.info(f"\033[0;32mBehavior files extracted successfully to `{dirpath}`\033[0m")
     prints.info("")

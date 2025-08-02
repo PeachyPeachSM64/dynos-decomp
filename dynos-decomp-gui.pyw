@@ -1,9 +1,9 @@
-import os, re
+import os, re, sys
 import itertools
 import traceback
 import tkinter as tk
 from tkinterdnd2 import DND_FILES, TkinterDnD
-from tkinter import scrolledtext, filedialog, font
+from tkinter import scrolledtext, filedialog, font, messagebox
 
 from dataclasses import dataclass
 from src import prints
@@ -36,6 +36,8 @@ COLOR_CODES_TO_TK_COLORS = {
     "\033[0;36m": "deep sky blue",
     "\033[0m": "reset",
 }
+
+BEHAVIOR_ASK_YES_NO_MESSAGE = "There are multiple behavior files (.bhv) queued for decompilation.\nWrite all behaviors in the same `behavior_data.c` file?"
 
 
 @dataclass
@@ -167,6 +169,15 @@ class DynosDecompGUI:
 
     def decomp_files(self):
         self.lock_buttons()
+        kwargs = {}
+
+        bhv_files_count = len([True for i in range(self.listbox_files.size()) if self.listbox_files.get(i).endswith(".bhv")])
+        if bhv_files_count >= 2 and messagebox.askyesno(WINDOW_TITLE, BEHAVIOR_ASK_YES_NO_MESSAGE):
+            behavior_data_filepath = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "behavior_data.c")
+            kwargs["behavior_data_filepath"] = behavior_data_filepath
+            try: os.remove(behavior_data_filepath)
+            except: pass
+
         while self.listbox_files.size() > 0:
             filepath = self.listbox_files.get(0)
             max_width = self.get_visible_chars_per_line()
@@ -177,7 +188,7 @@ class DynosDecompGUI:
             )
             for ext, patterns in FILE_TYPES_PATTERNS:
                 if any(re.match(pattern, filepath) for pattern in patterns):
-                    DECOMP_TABLE[ext]["decomp"](filepath)
+                    DECOMP_TABLE[ext]["decomp"](filepath, **kwargs)
                     break
             self.text_output.update_idletasks()
             self.listbox_files.config(state=tk.NORMAL) # Not unlocking the listbox before deleting hangs the program. Oops!
