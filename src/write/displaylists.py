@@ -52,7 +52,7 @@ def g_enddl(ctx: GfxCtx):
 
 def g_dl(ctx: GfxCtx):
     branch = C(ctx.w0, 16, 8)
-    dl = ctx.w1
+    dl, _ = get_pointer_and_offset(ctx.w1)
     if branch == 1:
         return f"gsSPBranchList({dl})", 0
     return f"gsSPDisplayList({dl})", 0
