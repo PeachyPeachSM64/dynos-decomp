@@ -403,6 +403,25 @@ define_geo_command(
         CMD_PTR("displayList")
 ),
 define_geo_command(
+    "GEO_SCALE_XYZ",
+    "layer, sx, sy, sz",
+    0x4,
+        CMD_BBH(0x1D, "layer:u", 0x0000),
+        CMD_W("sx:x"),
+        CMD_W("sy:x"),
+        CMD_W("sz:x")
+),
+define_geo_command(
+    "GEO_SCALE_XYZ_WITH_DL",
+    "layer, sx, sy, sz, displayList",
+    0xC,
+        CMD_BBH(0x1D, "layer:u", 0x0000),
+        CMD_W("sx:x"),
+        CMD_W("sy:x"),
+        CMD_W("sz:x"),
+        CMD_PTR("displayList")
+),
+define_geo_command(
     "GEO_NOP_1E",
     "",
     None,
@@ -445,6 +464,29 @@ define_geo_command(
     None,
         CMD_BBH(0x23, 0x00, "param:u"),
         CMD_PTR("function")
+),
+define_geo_command(
+    "GEO_BONE",
+    "layer, tx, ty, tz, rx, ry, rz, displayList",
+    0x0,
+        CMD_BBH(0x24, "layer:u", 0x0000),
+        CMD_HH("tx:s", "ty:s"),
+        CMD_HH("tz:s", "rx:s"),
+        CMD_HH("ry:s", "rz:s"),
+        CMD_PTR("displayList")
+),
+define_geo_command(
+    "GEO_BONE_WITH_SCALE",
+    "layer, tx, ty, tz, rx, ry, rz, sx, sy, sz, displayList",
+    0x8,
+        CMD_BBH(0x24, "layer:u", 0x0000),
+        CMD_HH("tx:s", "ty:s"),
+        CMD_HH("tz:s", "rx:s"),
+        CMD_HH("ry:s", "rz:s"),
+        CMD_W("sx:x"),
+        CMD_W("sy:x"),
+        CMD_W("sz:x"),
+        CMD_PTR("displayList")
 ),
 
 ]

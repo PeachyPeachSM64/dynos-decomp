@@ -126,8 +126,10 @@ def g_copymem(ctx: GfxCtx):
     part_str = G_COPYMEM_BODY_PARTS.get(part, f"{part}")
     if C(ctx.w(1, 0), 24, 8) == G_COPYMEM:
         return f"gsSPCopyLightsPlayerPart({part_str})", 1
-    sub_part = 1 + (src + 1) % 2
-    return f"gsSPCopyLightEXT({dst}, ((2 * (({part_str}) + 1)) + {sub_part}))", 0
+    # NOTE: DynOS doesn't actually know how to decode this
+    # sub_part = 1 + (src + 1) % 2
+    # return f"gsSPCopyLightEXT({dst}, ((2 * (({part_str}) + 1)) + {sub_part}))", 0
+    return f"gsSPCopyLightEXT({dst}, {src})", 0
 
 def g_vtx(ctx: GfxCtx):
     v = ctx.w1
