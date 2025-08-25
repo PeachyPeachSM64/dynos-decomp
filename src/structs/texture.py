@@ -4,6 +4,8 @@ from .. import prints
 from ..consts.pointers import TEXR
 from ..read import *
 
+PNG_MAGIC = bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+
 # Image formats
 G_IM_FMT_RGBA = 0
 G_IM_FMT_IA = 3
@@ -128,7 +130,7 @@ class RawTextureData:
         prints.warning("Unknown image type: fmt: %d, siz: %d" % (self.fmt, self.siz))
         return None
 
-    def write(self, filepath: str):
+    def write(self, filepath: str) -> bool:
         rgba32 = self.convert_to_rgba32()
         if rgba32:
             img = []
@@ -144,6 +146,8 @@ class RawTextureData:
             with open(filepath, "wb") as f:
                 w = png.Writer(self.width, self.height, greyscale=False, alpha='RGBA')
                 w.write(f, img)
+            return True
+        return False
 
 
 @dataclass
@@ -169,12 +173,16 @@ class Texture:
         if length_or_texr == TEXR:
             texture.ref, index = read_name(buffer, index + 4)
             return texture, index
-        texture.png = bytes(buffer[index + 4:index + 4 + length_or_texr])
+        png_sig = bytes(buffer[index + 4: index + 4 + len(PNG_MAGIC)])
+        if png_sig == PNG_MAGIC:
+            texture.png = bytes(buffer[index + 4:index + 4 + length_or_texr])
         return texture, index + 4 + length_or_texr
 
-    def write(self, filepath: str):
+    def write(self, filepath: str) -> bool:
         if self.raw is not None:
-            self.raw.write(filepath)
-        elif self.png is not None:
+            return self.raw.write(filepath)
+        if self.png is not None:
             with open(filepath, "wb") as f:
                 f.write(self.png)
+            return True
+        return False

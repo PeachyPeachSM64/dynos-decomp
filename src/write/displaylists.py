@@ -429,11 +429,13 @@ def write_model_inc_c(self: GfxData, dirpath: str, model_name: str):
 
         # Write textures
         for name, texture in self.textures.items():
-            models_inc_c.write("Texture %s[] = \"actors/%s/%s.rgba32\";" % (
-                name, model_name, texture.ref or name
-            ))
+            if texture.ref or texture.write(os.path.join(dirpath, name + ".png")):
+                models_inc_c.write("Texture %s[] = \"actors/%s/%s\";" % (
+                    name, model_name, texture.ref or name
+                ))
+            else: # Empty or corrupted texture
+                models_inc_c.write("Texture %s[] = {0};" % (name))
             models_inc_c.write("\n\n")
-            texture.write(os.path.join(dirpath, name + ".rgba32.png"))
 
         # Write vertex arrays
         for name, vtxarr in self.vertices.items():
