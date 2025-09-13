@@ -350,6 +350,15 @@ def g_tri2_ext(ctx: GfxCtx):
     v12 = C(ctx.w1, 0, 8) // 2
     return f"gsSP2TrianglesDjui({v00}, {v01}, {v02}, 0x0, {v10}, {v11}, {v12}, 0x0)", 0
 
+def g_pparttocolor(ctx: GfxCtx):
+    color = C(ctx.w0, 16, 8)
+    color_str = G_PPARTTOCOLOR_COLORS.get(color, f"{color}")
+    offset = (ctx.w1 - 1) & 1
+    offset_str = G_PPARTTOCOLOR_OFFSETS.get(offset, f"{offset}")
+    part = ((ctx.w1 - offset - 1) / 2) - 1
+    part_str = G_PPARTTOCOLOR_BODY_PARTS.get(part, f"{part}")
+    return f"gsSPCopyPlayerPartToColor({color_str}, {part_str}, {offset_str})", 0
+
 #
 # GFX commands
 #
@@ -401,6 +410,7 @@ GFX_COMMANDS = {
 # Extended
     G_VTX_EXT: g_vtx_ext,
     G_TRI2_EXT: g_tri2_ext,
+    G_PPARTTOCOLOR: g_pparttocolor,
 }
 
 
