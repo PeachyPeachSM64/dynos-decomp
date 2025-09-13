@@ -74,6 +74,7 @@ def g_movemem(ctx: GfxCtx):
 
 def g_moveword(ctx: GfxCtx):
     idx = C(ctx.w0, 16, 8)
+    offset = C(ctx.w0, 0, 16)
     if idx == G_MW_NUMLIGHT:
         num_lights = ctx.w1 // 24
         light, _ = get_pointer_and_offset(ctx.w(1, 1))
@@ -82,7 +83,10 @@ def g_moveword(ctx: GfxCtx):
         fm = C(ctx.w1, 16, 16)
         fo = C(ctx.w1, 0, 16)
         return f"gsSPFogFactor(0x{fm:X}, 0x{fo:X})", 0
-    offset = C(ctx.w0, 0, 16)
+    elif idx == G_MW_FX and offset == G_MWO_FRESNEL:
+        fs = C(ctx.w1, 16, 16)
+        fo = C(ctx.w1, 0, 16)
+        return f"gsSPFresnel(0x{fs:X}, 0x{fo:X})", 0
     data = ctx.w1
     return f"gsMoveWd({idx}, {offset}, {data})", 0
 

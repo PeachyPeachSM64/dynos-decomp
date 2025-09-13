@@ -205,6 +205,9 @@ G_MV_LIGHT = 10
 
 G_MW_NUMLIGHT = 0x02
 G_MW_FOG = 0x08
+G_MW_FX = 0x00
+
+G_MWO_FRESNEL = 0x0C
 
 #
 # G_MTX
@@ -231,6 +234,7 @@ G_GEOMETRYMODE_FLAGS = {
   # 0x000008: "<unused>",
   # 0x000010: "<unused>",
   # 0x000020: "<unused>",
+    0x000040: "G_FRESNEL_COLOR_EXT",
     0x000080: "G_PACKED_NORMALS_EXT",
   # 0x000100: "<unused>",
     0x000200: "G_CULL_FRONT",
@@ -246,7 +250,7 @@ G_GEOMETRYMODE_FLAGS = {
     0x080000: "G_TEXTURE_GEN_LINEAR",
     0x100000: "G_LOD",
     0x200000: "G_SHADING_SMOOTH",
-  # 0x400000: "<unused>",
+    0x400000: "G_FRESNEL_ALPHA_EXT",
     0x800000: "G_CLIPPING",
 }
 
