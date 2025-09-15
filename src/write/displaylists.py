@@ -87,6 +87,10 @@ def g_moveword(ctx: GfxCtx):
         fs = C(ctx.w1, 16, 16)
         fo = C(ctx.w1, 0, 16)
         return f"gsSPFresnel(0x{fs:X}, 0x{fo:X})", 0
+    elif idx == G_MW_LIGHTCOL:
+        light = (offset // 24) + 1
+        light_str = G_MOVEWORD_LIGHTS.get(light, f"{light}")
+        return f"gsSPLightColor({light_str}, 0x{ctx.w1:08X})", 1
     data = ctx.w1
     return f"gsMoveWd({idx}, {offset}, {data})", 0
 

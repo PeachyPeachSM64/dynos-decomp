@@ -206,8 +206,20 @@ G_MV_LIGHT = 10
 G_MW_NUMLIGHT = 0x02
 G_MW_FOG = 0x08
 G_MW_FX = 0x00
+G_MW_LIGHTCOL = 0x0A
 
 G_MWO_FRESNEL = 0x0C
+
+G_MOVEWORD_LIGHTS = {
+    1: "LIGHT_1",
+    2: "LIGHT_2",
+    3: "LIGHT_3",
+    4: "LIGHT_4",
+    5: "LIGHT_5",
+    6: "LIGHT_6",
+    7: "LIGHT_7",
+    8: "LIGHT_8",
+}
 
 #
 # G_MTX
