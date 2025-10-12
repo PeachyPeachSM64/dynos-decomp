@@ -1,5 +1,6 @@
 import os, zlib
 from . import prints
+from .consts.types import DATA_TYPES_ACTOR, DATA_TYPES_TEXTURE, DATA_TYPES_BEHAVIOR
 from .gfxdata import GfxData
 from .write import geolayouts, displaylists, animations, behaviors
 
@@ -47,7 +48,7 @@ def get_raw_data(filepath: str, create_dir: bool = False, ext: str|None = None) 
 def decomp_actor(filepath: str, **kwargs):
     data, dirpath = get_raw_data(filepath, True, ".bin")
     model_name = dirpath.split("/")[-1]
-    gfxdata = GfxData.read(data)
+    gfxdata = GfxData.read(data, DATA_TYPES_ACTOR)
 
     prints.info("")
     prints.info("--------------------------------")
@@ -73,7 +74,7 @@ def decomp_actor(filepath: str, **kwargs):
 
 def decomp_texture(filepath: str, **kwargs):
     data, _ = get_raw_data(filepath)
-    gfxdata = GfxData.read(data)
+    gfxdata = GfxData.read(data, DATA_TYPES_TEXTURE)
     texture_name, texture = next(iter(gfxdata.textures.items()))
     png_filepath = os.path.join(os.path.dirname(filepath), texture_name+".png")
 
@@ -91,7 +92,7 @@ def decomp_texture(filepath: str, **kwargs):
 
 def decomp_behavior(filepath: str, **kwargs):
     data, _ = get_raw_data(filepath, False)
-    gfxdata = GfxData.read(data)
+    gfxdata = GfxData.read(data, DATA_TYPES_BEHAVIOR)
     behavior_data_filepath = kwargs.get("behavior_data_filepath")
     if behavior_data_filepath is None:
         dirpath = get_dest_filepath(filepath, ".bhv", "")

@@ -186,3 +186,23 @@ class Texture:
                 f.write(self.png)
             return True
         return False
+
+
+@dataclass
+class TextureList:
+    textures: list[str] = field(default_factory=lambda: [])
+
+    @staticmethod
+    def read(buffer: bytes, index: int):
+        texlist = TextureList()
+        length = read_u32(buffer, index)
+        index += 4
+        for _ in range(length):
+            index_ptr = index
+            value, index = read_pointer(buffer, index, True)
+            if isinstance(value, str):
+                texlist.textures.append(value)
+            else:
+                prints.warning("\n%08X    [!] Invalid texture (expected name): %08X" % (index_ptr, value))
+                texlist.textures.append("")
+        return texlist, index

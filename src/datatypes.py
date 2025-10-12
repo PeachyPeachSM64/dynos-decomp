@@ -1,4 +1,5 @@
 from .gfxdata import GfxData
+from .consts.types import *
 
 
 def not_implemented(*_):
@@ -7,107 +8,107 @@ def not_implemented(*_):
 
 DATA_TYPES = {
 
-0: {
+DATA_TYPE_NONE: {
     "name": "NONE",
     "read": not_implemented,
 },
-1: {
+DATA_TYPE_LIGHT: {
     "name": "LIGHT",
     "read": GfxData.read_lights1,
 },
-2: {
+DATA_TYPE_TEXTURE: {
     "name": "TEXTURE",
     "read": GfxData.read_texture,
 },
-3: {
+DATA_TYPE_VERTEX: {
     "name": "VERTEX",
     "read": GfxData.read_vertex,
 },
-4: {
+DATA_TYPE_DISPLAY_LIST: {
     "name": "DISPLAY_LIST",
     "read": GfxData.read_display_list,
 },
-5: {
+DATA_TYPE_GEO_LAYOUT: {
     "name": "GEO_LAYOUT",
     "read": GfxData.read_geo_layout,
 },
-6: {
+DATA_TYPE_ANIMATION_VALUE: {
     "name": "ANIMATION_VALUE",
     "read": not_implemented,
 },
-7: {
+DATA_TYPE_ANIMATION_INDEX: {
     "name": "ANIMATION_INDEX",
     "read": not_implemented,
 },
-8: {
+DATA_TYPE_ANIMATION: {
     "name": "ANIMATION",
     "read": GfxData.read_animation,
 },
-9: {
+DATA_TYPE_ANIMATION_TABLE: {
     "name": "ANIMATION_TABLE",
     "read": GfxData.read_animation_table,
 },
-10: {
+DATA_TYPE_GFXDYNCMD: {
     "name": "GFXDYNCMD",
-    "read": not_implemented,
+    "read": GfxData.read_gfxdyncmd,
 },
-11: {
+DATA_TYPE_COLLISION: {
     "name": "COLLISION",
     "read": not_implemented,
 },
-12: {
+DATA_TYPE_LEVEL_SCRIPT: {
     "name": "LEVEL_SCRIPT",
     "read": not_implemented,
 },
-13: {
+DATA_TYPE_MACRO_OBJECT: {
     "name": "MACRO_OBJECT",
     "read": not_implemented,
 },
-14: {
+DATA_TYPE_TRAJECTORY: {
     "name": "TRAJECTORY",
     "read": not_implemented,
 },
-15: {
+DATA_TYPE_MOVTEX: {
     "name": "MOVTEX",
     "read": not_implemented,
 },
-16: {
+DATA_TYPE_MOVTEXQC: {
     "name": "MOVTEXQC",
     "read": not_implemented,
 },
-17: {
+DATA_TYPE_ROOMS: {
     "name": "ROOMS",
     "read": not_implemented,
 },
-18: {
+DATA_TYPE_LIGHT_T: {
     "name": "LIGHT_T",
     "read": GfxData.read_light,
 },
-19: {
+DATA_TYPE_AMBIENT_T: {
     "name": "AMBIENT_T",
     "read": GfxData.read_ambient,
 },
-20: {
+DATA_TYPE_TEXTURE_LIST: {
     "name": "TEXTURE_LIST",
-    "read": not_implemented,
+    "read": GfxData.read_texture_list,
 },
-21: {
+DATA_TYPE_TEXTURE_RAW: {
     "name": "TEXTURE_RAW",
     "read": GfxData.read_texture_raw,
 },
-22: {
+DATA_TYPE_BEHAVIOR_SCRIPT: {
     "name": "BEHAVIOR_SCRIPT",
     "read": GfxData.read_behavior,
 },
-23: {
+DATA_TYPE_UNUSED: {
     "name": "UNUSED",
     "read": not_implemented,
 },
-24: {
+DATA_TYPE_LIGHT_0: {
     "name": "LIGHT_0",
-    "read": not_implemented,
+    "read": GfxData.read_lights1, # Note: internally, Lights0 struct is the same as Lights1
 },
-0xFF: {
+DATA_TYPE_PRIORITY: {
     "name": "PRIORITY",
     "read": GfxData.read_priority,
 },
