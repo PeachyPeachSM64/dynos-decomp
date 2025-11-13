@@ -1,12 +1,13 @@
 import os, zlib
 from . import prints
+from .consts.dynosbin import DYNOSBIN
 from .consts.types import DATA_TYPES_ACTOR, DATA_TYPES_TEXTURE, DATA_TYPES_BEHAVIOR
 from .gfxdata import GfxData
 from .write import geolayouts, displaylists, animations, behaviors
 
 
 def is_compressed(data: bytes) -> bool:
-    return data[:8].decode() == "DYNOSBIN"
+    return data[:8] == DYNOSBIN
 
 
 def get_dest_filepath(filepath: str, ext_from: str, ext_to: str|None = None) -> str:
@@ -25,7 +26,7 @@ def get_raw_data(filepath: str, create_dir: bool = False, ext: str|None = None) 
         bin_data = data
     else:
         raw_data = data
-        bin_data = b"DYNOSBIN" + len(data).to_bytes(8, byteorder="little", signed=False) + zlib.compress(data)
+        bin_data = DYNOSBIN + len(data).to_bytes(8, byteorder="little", signed=False) + zlib.compress(data)
 
     # Make dest dir, write raw and bin files
     if create_dir and ext is not None:

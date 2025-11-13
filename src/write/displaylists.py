@@ -367,6 +367,10 @@ def g_pparttocolor(ctx: GfxCtx):
     part_str = G_PPARTTOCOLOR_BODY_PARTS.get(part, f"{part}")
     return f"gsSPCopyPlayerPartToColor({color_str}, {part_str}, {offset_str})", 0
 
+def g_setenvrgb(ctx: GfxCtx):
+    _, r, g, b, _ = get_setcolor_params(ctx)
+    return f"gsDPSetEnvRGB({r}, {g}, {b})", 0
+
 #
 # GFX commands
 #
@@ -419,6 +423,7 @@ GFX_COMMANDS = {
     G_VTX_EXT: g_vtx_ext,
     G_TRI2_EXT: g_tri2_ext,
     G_PPARTTOCOLOR: g_pparttocolor,
+    G_SETENVRGB: g_setenvrgb,
 }
 
 

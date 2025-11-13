@@ -58,7 +58,7 @@ def read_pointer(buffer: bytes, index: int, ignore_pointer_offset: bool) -> tupl
         value, index = read_name(buffer, index)
         offset = read_u32(buffer, index)
         if not ignore_pointer_offset:
-            value += " + %d" % (read_u32(buffer, index))
+            value += " + %d" % (offset)
         elif offset != 0:
             prints.warning("\n%08X    [!] Non-zero offset on pointer %s: %d" % (index_ptr, value, offset))
         index += 4

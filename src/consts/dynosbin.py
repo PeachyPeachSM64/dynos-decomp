@@ -1,0 +1,1 @@
+DYNOSBIN = b"DYNOSBIN"

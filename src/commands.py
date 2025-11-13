@@ -1,5 +1,6 @@
 import os, zlib
 from . import prints
+from .consts.dynosbin import DYNOSBIN
 from .decomp import is_compressed, get_dest_filepath, DECOMP_TABLE
 
 
@@ -10,7 +11,7 @@ def compress(filepath: str, data: bytes):
     bin_data = zlib.compress(data)
     bin_filepath = get_dest_filepath(filepath, ".bin")
     with open(bin_filepath, "wb") as f:
-        f.write(b"DYNOSBIN")
+        f.write(DYNOSBIN)
         f.write(len(data).to_bytes(8, byteorder="little", signed=False))
         f.write(bin_data)
         prints.info(f"`{filepath}` -> `{bin_filepath}`")
