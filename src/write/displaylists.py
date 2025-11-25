@@ -145,6 +145,11 @@ def g_vtx(ctx: GfxCtx):
     v0 = C(ctx.w0, 1, 7) - n
     return f"gsSPVertex({v}, {n}, {v0})", 0
 
+def g_culldl(ctx: GfxCtx):
+    vstart = C(ctx.w0, 0, 16) // 2
+    vend = C(ctx.w1, 0, 16) // 2
+    return f"gsSPCullDisplayList({vstart}, {vend})", 0
+
 def g_tri1(ctx: GfxCtx):
     v0 = C(ctx.w0, 16, 8) // 2
     v1 = C(ctx.w0, 8, 8) // 2
@@ -392,6 +397,7 @@ GFX_COMMANDS = {
     G_TEXTURE: g_texture,
     G_COPYMEM: g_copymem,
     G_VTX: g_vtx,
+    G_CULLDL: g_culldl,
     G_TRI1: g_tri1,
     G_TRI2: g_tri2,
 
