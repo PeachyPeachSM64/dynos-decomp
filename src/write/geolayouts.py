@@ -61,6 +61,37 @@ GEO_CONSTANTS = {
     },
 }
 
+GEO_ASM_CONSTANTS = {
+    "geo_mario_set_player_colors": {
+        "3": "LAYER_FORCE + 3",
+        "4": "LAYER_OPAQUE + 3",
+        "5": "LAYER_OPAQUE_DECAL + 3",
+        "6": "LAYER_OPAQUE_INTER + 3",
+        "7": "LAYER_ALPHA + 3",
+        "8": "LAYER_TRANSPARENT + 3",
+        "9": "LAYER_TRANSPARENT_DECAL + 3",
+        "10": "LAYER_TRANSPARENT_INTER + 3",
+    },
+    "geo_mirror_mario_backface_culling": {
+        "0": "LAYER_FORCE << 2",
+        "1": "(LAYER_FORCE << 2) | 1",
+        "4": "LAYER_OPAQUE << 2",
+        "5": "(LAYER_OPAQUE << 2) | 1",
+        "8": "LAYER_OPAQUE_DECAL << 2",
+        "9": "(LAYER_OPAQUE_DECAL << 2) | 1",
+        "12": "LAYER_OPAQUE_INTER << 2",
+        "13": "(LAYER_OPAQUE_INTER << 2) | 1",
+        "16": "LAYER_ALPHA << 2",
+        "17": "(LAYER_ALPHA << 2) | 1",
+        "20": "LAYER_TRANSPARENT << 2",
+        "21": "(LAYER_TRANSPARENT << 2) | 1",
+        "24": "LAYER_TRANSPARENT_DECAL << 2",
+        "25": "(LAYER_TRANSPARENT_DECAL << 2) | 1",
+        "28": "LAYER_TRANSPARENT_INTER << 2",
+        "29": "(LAYER_TRANSPARENT_INTER << 2) | 1",
+    },
+}
+
 
 def CMD_BBBB(a, b, c, d):
     return [
@@ -529,7 +560,17 @@ def write_geo_inc_c(self: GfxData, dirpath: str):
                             # replace constant by its name
                             arg_name = arg["value"]
                             if arg_name in GEO_CONSTANTS:
-                                value_str = GEO_CONSTANTS[arg_name][value_str]
+                                constants = GEO_CONSTANTS[arg_name]
+                                if value_str in constants:
+                                    value_str = constants[value_str]
+
+                            # replace GEO_ASM parameter for common functions
+                            if geo_command["name"] == "GEO_ASM" and arg_name == "param":
+                                func_name = buffer[index + geo_command["args"][1]["index"]]
+                                if func_name in GEO_ASM_CONSTANTS:
+                                    constants = GEO_ASM_CONSTANTS[func_name]
+                                    if value_str in constants:
+                                        value_str = constants[value_str]
 
                             args_str += value_str + ", "
                         geo_inc_c.write((args_str[:-2] if args_str else "") + "),\n")
