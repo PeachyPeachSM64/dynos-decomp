@@ -54,7 +54,7 @@ DATA_TYPE_GFXDYNCMD: {
 },
 DATA_TYPE_COLLISION: {
     "name": "COLLISION",
-    "read": not_implemented,
+    "read": GfxData.read_collision,
 },
 DATA_TYPE_LEVEL_SCRIPT: {
     "name": "LEVEL_SCRIPT",

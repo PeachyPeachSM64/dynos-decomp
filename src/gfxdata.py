@@ -9,6 +9,7 @@ from .structs.displaylist import DisplayList
 from .structs.geolayout import GeoLayout
 from .structs.animation import Animation
 from .structs.behavior import BehaviorScript
+from .structs.collision import Collision
 
 
 @dataclass
@@ -24,6 +25,7 @@ class GfxData:
     animations: dict[str, Animation] = field(default_factory=lambda: {})
     animation_table: list[str] = field(default_factory=lambda: [])
     behaviors: dict[str, BehaviorScript] = field(default_factory=lambda: {})
+    collisions: dict[str, Collision] = field(default_factory=lambda: {})
     priority: int = 0
 
     @staticmethod
@@ -106,6 +108,12 @@ class GfxData:
         name, index = read_name(buffer, index)
         data, index = BehaviorScript.read(buffer, index)
         self.behaviors[name] = data
+        return index, name
+
+    def read_collision(self, buffer: bytes, index: int):
+        name, index = read_name(buffer, index)
+        data, index = Collision.read(buffer, index)
+        self.collisions[name] = data
         return index, name
 
     def read_priority(self, buffer: bytes, index: int):

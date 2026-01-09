@@ -1,9 +1,9 @@
 import os, zlib
 from . import prints
 from .consts.dynosbin import DYNOSBIN
-from .consts.types import DATA_TYPES_ACTOR, DATA_TYPES_TEXTURE, DATA_TYPES_BEHAVIOR
+from .consts.types import DATA_TYPES_ACTOR, DATA_TYPES_TEXTURE, DATA_TYPES_BEHAVIOR, DATA_TYPES_COLLISION
 from .gfxdata import GfxData
-from .write import geolayouts, displaylists, animations, behaviors
+from .write import geolayouts, displaylists, animations, behaviors, collisions
 
 
 def is_compressed(data: bytes) -> bool:
@@ -116,6 +116,23 @@ def decomp_behavior(filepath: str, **kwargs):
     prints.info("")
 
 
+def decomp_collision(filepath: str, **kwargs):
+    data, dirpath = get_raw_data(filepath, True, ".col")
+    collision_name = dirpath.split("/")[-1]
+    gfxdata = GfxData.read(data, DATA_TYPES_COLLISION)
+
+    prints.info("")
+    prints.info("--------------------------------")
+    prints.info(f"collision: {collision_name}")
+    prints.info("--------------------------------")
+    prints.info("")
+
+    gfxdata.write_collision_inc_c(dirpath)
+    prints.info("")
+    prints.info(f"\033[0;32mCollision files extracted successfully to `{dirpath}`\033[0m")
+    prints.info("")
+
+
 DECOMP_TABLE = {
     ".bin": {
         "name": "DynOS actor files",
@@ -131,6 +148,11 @@ DECOMP_TABLE = {
         "name": "DynOS behavior files",
         "compressed": False,
         "decomp": decomp_behavior
+    },
+    ".col": {
+        "name": "DynOS collision files",
+        "compressed": True,
+        "decomp": decomp_collision
     }
 }
 
