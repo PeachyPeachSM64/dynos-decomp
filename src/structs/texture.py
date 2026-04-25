@@ -203,6 +203,6 @@ class TextureList:
             if isinstance(value, str):
                 texlist.textures.append(value)
             else:
-                prints.warning("\n%08X    [!] Invalid texture (expected name): %08X" % (index_ptr, value))
+                prints.warning("%08X    [Warning!] Invalid texture (expected name): %08X" % (index_ptr, value), nowarn=True)
                 texlist.textures.append("")
         return texlist, index

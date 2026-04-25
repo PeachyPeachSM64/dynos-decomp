@@ -3,16 +3,15 @@ from ..read import *
 
 
 @dataclass
-class Collision:
+class LevelScript:
     buffer: list = field(default_factory=lambda: [])
 
     @staticmethod
     def read(buffer: bytes, index: int):
-        collision = Collision()
+        level = LevelScript()
         length = read_u32(buffer, index)
         index += 4
         for _ in range(length):
-            cmd = read_u16(buffer, index)
-            collision.buffer.append(cmd)
-            index += 2
-        return collision, index
+            value, index = read_pointer(buffer, index, True)
+            level.buffer.append(value)
+        return level, index

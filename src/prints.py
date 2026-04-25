@@ -27,14 +27,30 @@ Examples:
     exit(exit_code)
 
 
+print_queue: list = []
+
+def flush():
+    global print_queue
+    for message, kwargs in print_queue:
+        print(message, **kwargs)
+    print_queue.clear()
+
+
 def info(message: str, **kwargs):
     print(message, **kwargs)
+    flush()
 
 
 def warning(message: str, **kwargs):
-    print(f"\033[0;33mWarning: {message}\033[0m", **kwargs)
+    global print_queue
+    warn = "Warning: " if not kwargs.pop("nowarn", False) else ""
+    print_queue.append((
+        f"\033[0;33m{warn}{message}\033[0m",
+        kwargs
+    ))
 
 
 def error(message: str, **kwargs):
+    flush()
     print(f"\033[0;31mError: {message}\033[0m", **kwargs)
     usage(1)

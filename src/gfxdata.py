@@ -10,6 +10,11 @@ from .structs.geolayout import GeoLayout
 from .structs.animation import Animation
 from .structs.behavior import BehaviorScript
 from .structs.collision import Collision
+from .structs.level import LevelScript
+from .structs.macroobject import MacroObject
+from .structs.trajectory import Trajectory
+from .structs.movtex import Movtex, MovtexQC
+from .structs.room import Room
 
 
 @dataclass
@@ -26,6 +31,12 @@ class GfxData:
     animation_table: list[str] = field(default_factory=lambda: [])
     behaviors: dict[str, BehaviorScript] = field(default_factory=lambda: {})
     collisions: dict[str, Collision] = field(default_factory=lambda: {})
+    levels: dict[str, LevelScript] = field(default_factory=lambda: {})
+    macro_objects: dict[str, MacroObject] = field(default_factory=lambda: {})
+    trajectories: dict[str, Trajectory] = field(default_factory=lambda: {})
+    movtexs: dict[str, Movtex] = field(default_factory=lambda: {})
+    movtexqcs: dict[str, MovtexQC] = field(default_factory=lambda: {})
+    rooms: dict[str, Room] = field(default_factory=lambda: {})
     priority: int = 0
 
     @staticmethod
@@ -118,38 +129,38 @@ class GfxData:
 
     def read_level(self, buffer: bytes, index: int):
         name, index = read_name(buffer, index)
-        data, index = PLACEHOLDER.read(buffer, index)
-        self.SOMETHING
+        data, index = LevelScript.read(buffer, index)
+        self.levels[name] = data
         return index, name
 
     def read_macro_object(self, buffer: bytes, index: int):
         name, index = read_name(buffer, index)
-        data, index = PLACEHOLDER.read(buffer, index)
-        self.SOMETHING
+        data, index = MacroObject.read(buffer, index)
+        self.macro_objects[name] = data
         return index, name
 
     def read_trajectory(self, buffer: bytes, index: int):
         name, index = read_name(buffer, index)
-        data, index = PLACEHOLDER.read(buffer, index)
-        self.SOMETHING
+        data, index = Trajectory.read(buffer, index)
+        self.trajectories[name] = data
         return index, name
 
     def read_movtex(self, buffer: bytes, index: int):
         name, index = read_name(buffer, index)
-        data, index = PLACEHOLDER.read(buffer, index)
-        self.SOMETHING
+        data, index = Movtex.read(buffer, index)
+        self.movtexs[name] = data
         return index, name
 
     def read_movtexqc(self, buffer: bytes, index: int):
         name, index = read_name(buffer, index)
-        data, index = PLACEHOLDER.read(buffer, index)
-        self.SOMETHING
+        data, index = MovtexQC.read(buffer, index)
+        self.movtexqcs[name] = data
         return index, name
 
     def read_rooms(self, buffer: bytes, index: int):
         name, index = read_name(buffer, index)
-        data, index = PLACEHOLDER.read(buffer, index)
-        self.SOMETHING
+        data, index = Room.read(buffer, index)
+        self.rooms[name] = data
         return index, name
 
     def read_priority(self, buffer: bytes, index: int):
@@ -173,7 +184,7 @@ class GfxData:
 
             # Unknown type
             if data_type not in DATA_TYPES:
-                prints.warning("\n%08X    [!] Unknown data type: %d" % (index_data, data_type))
+                prints.warning("%08X    [Warning!] Unknown data type: %d" % (index_data, data_type), nowarn=True)
                 break
 
             data_type_name = DATA_TYPES[data_type]["name"]
@@ -182,7 +193,7 @@ class GfxData:
             # Check allowed
             data_type_used = data_types.get(data_type)
             if data_type_used is None:
-                prints.warning("\n%08X    [!] Data type not allowed: %s" % (index_data, data_type_name))
+                prints.warning("%08X    [Warning!] Data type not allowed: %s" % (index_data, data_type_name), nowarn=True)
                 break
 
             prints.info("%08X    %-16s " % (index_data, data_type_name), end="")
@@ -191,6 +202,6 @@ class GfxData:
 
             # Check unused
             if not data_type_used:
-                prints.warning("\n%08X    [!] Unused data type: %s" % (index_data, data_type_name))
+                prints.warning("%08X    [Warning!] Unused data type: %s" % (index_data, data_type_name), nowarn=True)
 
         return gfx

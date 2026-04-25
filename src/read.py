@@ -54,7 +54,7 @@ def read_pointer(buffer: bytes, index: int, ignore_pointer_offset: bool) -> tupl
         if value < len(FUNCTION_NAMES):
             value = FUNCTION_NAMES[value]
         else:
-            prints.warning("\n%08X    [!] Unknown function index: %d" % (index, value))
+            prints.warning("%08X    [Warning!] Unknown function index: %d" % (index, value), nowarn=True)
             value = "unknown_func_%d" % (value)
         index += 4
     elif value == PNTR:
@@ -64,7 +64,7 @@ def read_pointer(buffer: bytes, index: int, ignore_pointer_offset: bool) -> tupl
         if not ignore_pointer_offset:
             value += " + %d" % (offset)
         elif offset != 0:
-            prints.warning("\n%08X    [!] Non-zero offset on pointer %s: %d" % (index_ptr, value, offset))
+            prints.warning("%08X    [Warning!] Non-zero offset on pointer %s: %d" % (index_ptr, value, offset), nowarn=True)
         index += 4
     elif value == LUAV:
         value, index = read_name(buffer, index)

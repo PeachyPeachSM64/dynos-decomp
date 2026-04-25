@@ -50,6 +50,7 @@ class DynosDecompGUI:
     listbox_files: tk.Listbox
     font_output: font.Font
     text_output: scrolledtext.ScrolledText
+    print_queue: list
 
 
     # tkinter dnd drop event.data format is ass, so this is required (no regex can solve this)
@@ -208,16 +209,30 @@ class DynosDecompGUI:
         self.text_output.config(state=tk.DISABLED)
 
 
+    def flush(self):
+        for message, kwargs in self.print_queue:
+            self.print_text(message, **kwargs)
+        self.print_queue.clear()
+
+
     def info(self, message: str, **kwargs):
         self.print_text(message, **kwargs)
+        self.flush()
 
 
     def warning(self, message: str, **kwargs):
-        self.print_text(f"\033[0;33mWarning: {message}\033[0m", **kwargs)
+        warn = "Warning: " if not kwargs.pop("nowarn", False) else ""
+        self.print_queue.append((
+            f"\033[0;33m{warn}{message}\033[0m",
+            kwargs
+        ))
 
 
     def error(self, message: str, **kwargs):
-        self.print_text(f"\033[0;31mError: {message}\033[0m", **kwargs)
+        self.print_queue.append((
+            f"\033[0;31mError: {message}\033[0m",
+            kwargs
+        ))
 
 
     def __init__(self):
@@ -296,6 +311,7 @@ class DynosDecompGUI:
         prints.info = lambda message, **kwargs: self.info(message, **kwargs)
         prints.warning = lambda message, **kwargs: self.warning(message, **kwargs)
         prints.error = lambda message, **kwargs: self.error(message, **kwargs)
+        self.print_queue = []
 
 
     def mainloop(self):
