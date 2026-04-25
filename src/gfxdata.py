@@ -116,6 +116,42 @@ class GfxData:
         self.collisions[name] = data
         return index, name
 
+    def read_level(self, buffer: bytes, index: int):
+        name, index = read_name(buffer, index)
+        data, index = PLACEHOLDER.read(buffer, index)
+        self.SOMETHING
+        return index, name
+
+    def read_macro_object(self, buffer: bytes, index: int):
+        name, index = read_name(buffer, index)
+        data, index = PLACEHOLDER.read(buffer, index)
+        self.SOMETHING
+        return index, name
+
+    def read_trajectory(self, buffer: bytes, index: int):
+        name, index = read_name(buffer, index)
+        data, index = PLACEHOLDER.read(buffer, index)
+        self.SOMETHING
+        return index, name
+
+    def read_movtex(self, buffer: bytes, index: int):
+        name, index = read_name(buffer, index)
+        data, index = PLACEHOLDER.read(buffer, index)
+        self.SOMETHING
+        return index, name
+
+    def read_movtexqc(self, buffer: bytes, index: int):
+        name, index = read_name(buffer, index)
+        data, index = PLACEHOLDER.read(buffer, index)
+        self.SOMETHING
+        return index, name
+
+    def read_rooms(self, buffer: bytes, index: int):
+        name, index = read_name(buffer, index)
+        data, index = PLACEHOLDER.read(buffer, index)
+        self.SOMETHING
+        return index, name
+
     def read_priority(self, buffer: bytes, index: int):
         self.priority = read_u8(buffer, index)
         return index + 1, "priority: %02X" % (self.priority)

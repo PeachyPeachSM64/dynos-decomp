@@ -58,27 +58,27 @@ DATA_TYPE_COLLISION: {
 },
 DATA_TYPE_LEVEL_SCRIPT: {
     "name": "LEVEL_SCRIPT",
-    "read": not_implemented,
+    "read": GfxData.read_level,
 },
 DATA_TYPE_MACRO_OBJECT: {
     "name": "MACRO_OBJECT",
-    "read": not_implemented,
+    "read": GfxData.read_macro_object,
 },
 DATA_TYPE_TRAJECTORY: {
     "name": "TRAJECTORY",
-    "read": not_implemented,
+    "read": GfxData.read_trajectory,
 },
 DATA_TYPE_MOVTEX: {
     "name": "MOVTEX",
-    "read": not_implemented,
+    "read": GfxData.read_movtex,
 },
 DATA_TYPE_MOVTEXQC: {
     "name": "MOVTEXQC",
-    "read": not_implemented,
+    "read": GfxData.read_movtexqc,
 },
 DATA_TYPE_ROOMS: {
     "name": "ROOMS",
-    "read": not_implemented,
+    "read": GfxData.read_rooms,
 },
 DATA_TYPE_LIGHT_T: {
     "name": "LIGHT_T",

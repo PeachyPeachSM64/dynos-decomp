@@ -51,7 +51,11 @@ def read_pointer(buffer: bytes, index: int, ignore_pointer_offset: bool) -> tupl
     index += 4
     if value == FUNC:
         value = read_u32(buffer, index)
-        value = FUNCTION_NAMES[value]
+        if value < len(FUNCTION_NAMES):
+            value = FUNCTION_NAMES[value]
+        else:
+            prints.warning("\n%08X    [!] Unknown function index: %d" % (index, value))
+            value = "unknown_func_%d" % (value)
         index += 4
     elif value == PNTR:
         index_ptr = index - 4

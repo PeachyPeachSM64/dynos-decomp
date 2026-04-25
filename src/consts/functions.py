@@ -618,4 +618,5 @@ FUNCTION_NAMES = [
     "bhv_ambient_light_update",
     "bhv_point_light_init",
     "bhv_point_light_loop",
+    "geo_switch_character_type",
 ]

@@ -1,7 +1,7 @@
 import os, zlib
 from . import prints
 from .consts.dynosbin import DYNOSBIN
-from .consts.types import DATA_TYPES_ACTOR, DATA_TYPES_TEXTURE, DATA_TYPES_BEHAVIOR, DATA_TYPES_COLLISION
+from .consts.types import DATA_TYPES_ACTOR, DATA_TYPES_TEXTURE, DATA_TYPES_BEHAVIOR, DATA_TYPES_COLLISION, DATA_TYPES_LEVEL
 from .gfxdata import GfxData
 from .write import geolayouts, displaylists, animations, behaviors, collisions
 
@@ -133,6 +133,23 @@ def decomp_collision(filepath: str, **kwargs):
     prints.info("")
 
 
+def decomp_level(filepath: str, **kwargs):
+    data, dirpath = get_raw_data(filepath, True, ".lvl")
+    level_name = dirpath.split("/")[-1]
+    gfxdata = GfxData.read(data, DATA_TYPES_LEVEL)
+
+    prints.info("")
+    prints.info("--------------------------------")
+    prints.info(f"level: {level_name}")
+    prints.info("--------------------------------")
+    prints.info("")
+
+    # gfxdata.write_level(dirpath)
+    prints.info("")
+    prints.info(f"\033[0;32mLevel files extracted successfully to `{dirpath}`\033[0m")
+    prints.info("")
+
+
 DECOMP_TABLE = {
     ".bin": {
         "name": "DynOS actor files",
@@ -153,6 +170,11 @@ DECOMP_TABLE = {
         "name": "DynOS collision files",
         "compressed": True,
         "decomp": decomp_collision
+    },
+    ".lvl": {
+        "name": "DynOS level files",
+        "compressed": True,
+        "decomp": decomp_level
     }
 }
 

@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from ..consts.functions import FUNCTION_NAMES
 from ..read import *
 
 
