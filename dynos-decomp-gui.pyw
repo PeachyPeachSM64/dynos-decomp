@@ -235,6 +235,11 @@ class DynosDecompGUI:
         ))
 
 
+    def exception(self, message: str, **kwargs):
+        self.flush()
+        self.print_text(f"\033[0;31m{message}\033[0m", **kwargs)
+
+
     def __init__(self):
         self.window = TkinterDnD.Tk()
         self.window.title(WINDOW_TITLE)
@@ -303,7 +308,7 @@ class DynosDecompGUI:
         # Error handling
         def show_error(ex, gui: DynosDecompGUI, *args):
             err = traceback.format_exception(*args)
-            gui.error("Exception: " + "".join(err))
+            gui.exception("Exception: " + "".join(err))
             gui.unlock_buttons()
         tk.Tk.report_callback_exception = lambda ex, *args: show_error(ex, self, *args)
 
