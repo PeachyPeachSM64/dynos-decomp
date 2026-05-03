@@ -4,6 +4,7 @@ import traceback
 import tkinter as tk
 from tkinterdnd2 import DND_FILES, TkinterDnD
 from tkinter import scrolledtext, filedialog, font, messagebox
+from tktooltip import ToolTip
 
 from dataclasses import dataclass
 from src import prints
@@ -47,6 +48,7 @@ class DynosDecompGUI:
     button_decomp: tk.Button
     button_clear_files: tk.Button
     button_clear_output: tk.Button
+    checkbox_match_name: tk.Checkbutton; check_match_name: tk.BooleanVar
     listbox_files: tk.Listbox
     font_output: font.Font
     text_output: scrolledtext.ScrolledText
@@ -170,7 +172,9 @@ class DynosDecompGUI:
 
     def decomp_files(self):
         self.lock_buttons()
-        kwargs = {}
+        kwargs: dict[str, bool|str] = {
+            "match_name": self.check_match_name.get(),
+        }
 
         bhv_files_count = len([True for i in range(self.listbox_files.size()) if self.listbox_files.get(i).endswith(".bhv")])
         if bhv_files_count >= 2 and messagebox.askyesno(WINDOW_TITLE, BEHAVIOR_ASK_YES_NO_MESSAGE):
@@ -275,20 +279,31 @@ class DynosDecompGUI:
         self.listbox_files.config(yscrollcommand=scrollbar_files.set)
 
         # Decomp/clear buttons
-        layout_buttons = tk.Frame(self.window)
-        layout_buttons.grid_columnconfigure(0, weight=1)
-        layout_buttons.grid_columnconfigure(1, weight=1)
-        layout_buttons.grid_columnconfigure(2, weight=1)
-        layout_buttons.pack(fill=tk.X)
+        layout_center = tk.Frame(self.window)
+        layout_center.grid_columnconfigure(0, weight=1)
+        layout_center.grid_columnconfigure(1, weight=1)
+        layout_center.grid_columnconfigure(2, weight=1)
+        layout_center.pack(fill=tk.X)
 
-        layout_buttons_clear = tk.Frame(layout_buttons)
+        layout_options = tk.Frame(layout_center)
+        layout_options.grid_rowconfigure(0, weight=1)
+        layout_options.grid_rowconfigure(1, weight=1)
+        layout_options.grid_rowconfigure(2, weight=1)
+        layout_options.grid(row=0, column=0, sticky=tk.W)
+
+        layout_buttons_clear = tk.Frame(layout_center)
         layout_buttons_clear.grid_rowconfigure(0, weight=1)
         layout_buttons_clear.grid_rowconfigure(1, weight=1)
         layout_buttons_clear.grid(row=0, column=2, sticky=tk.E)
 
         font_decomp = font.Font(size=10, weight=font.BOLD)
-        self.button_decomp = tk.Button(layout_buttons, text="Decomp files", width=15, height=2, font=font_decomp, command=lambda: self.decomp_files())
+        self.button_decomp = tk.Button(layout_center, text="Decomp files", width=15, height=2, font=font_decomp, command=lambda: self.decomp_files())
         self.button_decomp.grid(row=0, column=1)
+
+        self.check_match_name = tk.BooleanVar(layout_options, True)
+        self.checkbox_match_name = tk.Checkbutton(layout_options, text="Match input name", variable=self.check_match_name)
+        self.checkbox_match_name.grid(row=0, column=0, sticky=tk.W, padx=(10, 0), pady=(0, 0))
+        ToolTip(self.checkbox_match_name, msg="Make the object name match the input filename.\nFor example, if the input filename is \"mario_geo.bin\",\nthe root geo layout name will be \"mario_geo\".")
 
         self.button_clear_files = tk.Button(layout_buttons_clear, text="Clear files", command=lambda: self.clear_files())
         self.button_clear_files.grid(row=0, column=0, sticky=tk.E, padx=(0, 10), pady=(5, 5))

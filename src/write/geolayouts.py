@@ -529,10 +529,13 @@ GEO_COMMANDS_LEVELS = {
 
 
 @GfxData.writer()
-def write_geo_inc_c(self: GfxData, dirpath: str):
+def write_geo_inc_c(self: GfxData, dirpath: str, geo_root_name: str|None):
     with open(os.path.join(dirpath, "geo.inc.c"), "w", newline="\n") as geo_inc_c:
+        geo_root_index = len(self.geolayouts) - 1
         for name, geolayout in self.geolayouts.items():
-            geo_inc_c.write("GeoLayout %s[] = {\n" % (name))
+            geo_inc_c.write("GeoLayout %s[] = {\n" % (
+                geo_root_name if geo_root_name is not None and geolayout.index == geo_root_index else name
+            ))
             level = 1
             index = 0
             buffer = geolayout.buffer

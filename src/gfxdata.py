@@ -97,6 +97,7 @@ class GfxData:
     def read_geo_layout(self, buffer: bytes, index: int):
         name, index = read_name(buffer, index)
         data, index = GeoLayout.read(buffer, index)
+        data.index = len(self.geolayouts)
         self.geolayouts[name] = data
         return index, name
 

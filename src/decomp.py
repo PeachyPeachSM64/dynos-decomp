@@ -16,7 +16,7 @@ def get_dest_filepath(filepath: str, ext_from: str, ext_to: str|None = None) -> 
     return (filepath[:i] if i != -1 and i > j else filepath) + (ext_to if ext_to is not None else ext_from)
 
 
-def get_raw_data(filepath: str, create_dir: bool = False, ext: str|None = None) -> tuple[bytes, str]:
+def get_raw_data(filepath: str, create_dir: bool = False, ext: str|None = None, get_dir_name = None) -> tuple[bytes, str]:
     with open(filepath, "rb") as f:
         data = f.read()
 
@@ -31,6 +31,7 @@ def get_raw_data(filepath: str, create_dir: bool = False, ext: str|None = None) 
     # Make dest dir, write raw and bin files
     if create_dir and ext is not None:
         dirpath = get_dest_filepath(filepath, ext, "")
+        dirpath = get_dir_name(dirpath) if get_dir_name else dirpath
         os.makedirs(dirpath, exist_ok=True)
 
         raw_filename = os.path.basename(get_dest_filepath(filepath, ext, ext+".raw"))
@@ -47,7 +48,8 @@ def get_raw_data(filepath: str, create_dir: bool = False, ext: str|None = None) 
 
 
 def decomp_actor(filepath: str, **kwargs):
-    data, dirpath = get_raw_data(filepath, True, ".bin")
+    match_name = kwargs.get("match_name", False)
+    data, dirpath = get_raw_data(filepath, True, ".bin", lambda dirpath: dirpath[:-4] if dirpath.endswith("_geo") else dirpath)
     model_name = dirpath.split("/")[-1]
     gfxdata = GfxData.read(data, DATA_TYPES_ACTOR)
 
@@ -65,7 +67,7 @@ def decomp_actor(filepath: str, **kwargs):
     prints.info("")
 
     gfxdata.write_model_inc_c(dirpath, model_name)
-    gfxdata.write_geo_inc_c(dirpath)
+    gfxdata.write_geo_inc_c(dirpath, (model_name + "_geo") if match_name else None)
     gfxdata.write_animations(dirpath)
     gfxdata.write_animation_table(dirpath)
     prints.info("")

@@ -5,6 +5,7 @@ from ..read import *
 @dataclass
 class GeoLayout:
     buffer: list = field(default_factory=lambda: [])
+    index: int = 0
 
     @staticmethod
     def read(buffer: bytes, index: int):
