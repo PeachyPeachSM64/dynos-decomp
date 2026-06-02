@@ -519,7 +519,7 @@ def write_collision_inc_c(self: GfxData, dirpath: str):
                 cmd = buffer[index]
 
                 if cmd not in COLLISION_COMMANDS:
-                    prints.warning("Unknown collision command: 0x%04X\nAborting collision parsing; Collision may be incomplete" % (cmd, name))
+                    prints.warning("Unknown collision command: 0x%04X\nAborting collision parsing; Collision may be incomplete" % (cmd))
                     break
 
                 collision_str, index = COLLISION_COMMANDS[cmd](buffer, index)
