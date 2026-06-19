@@ -9,9 +9,10 @@ from tktooltip import ToolTip
 from dataclasses import dataclass
 from src import prints
 from src.decomp import DECOMP_TABLE
+from src.globals import *
+from src.guitext import *
 
 
-WINDOW_TITLE = "DynOS Decomp"
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
 
@@ -20,7 +21,7 @@ FILE_TYPES = [
     for ext, info in DECOMP_TABLE.items()
 ]
 FILE_TYPES.insert(0,
-    ("DynOS compatible files", " ".join([pattern for _, pattern in FILE_TYPES]))
+    (TEXT_DYNOS_COMPATIBLE_FILES, " ".join([pattern for _, pattern in FILE_TYPES]))
 )
 FILE_TYPES_PATTERNS = [
     (ext, [".*\\"+ext] + ([".*\\"+ext+"\\.raw"] if info["compressed"] else []))
@@ -38,8 +39,6 @@ COLOR_CODES_TO_TK_COLORS = {
     "\033[0m": "reset",
 }
 
-BEHAVIOR_ASK_YES_NO_MESSAGE = "There are multiple behavior files (.bhv) queued for decompilation.\nWrite all behaviors in the same `behavior_data.c` file?"
-
 
 @dataclass
 class DynosDecompGUI:
@@ -49,6 +48,7 @@ class DynosDecompGUI:
     button_clear_files: tk.Button
     button_clear_output: tk.Button
     checkbox_match_name: tk.Checkbutton; check_match_name: tk.BooleanVar
+    checkbox_advanced_mode: tk.Checkbutton; check_advanced_mode: tk.BooleanVar
     listbox_files: tk.Listbox
     font_output: font.Font
     text_output: scrolledtext.ScrolledText
@@ -172,12 +172,14 @@ class DynosDecompGUI:
 
     def decomp_files(self):
         self.lock_buttons()
-        kwargs: dict[str, bool|str] = {
-            "match_name": self.check_match_name.get(),
-        }
+        kwargs: dict[str, bool|str] = {}
+
+        global g_options
+        g_options[OPT_MATCH_INPUT_NAME] = self.check_match_name.get()
+        g_options[OPT_ADVANCED_MODE] = self.check_advanced_mode.get()
 
         bhv_files_count = len([True for i in range(self.listbox_files.size()) if self.listbox_files.get(i).endswith(".bhv")])
-        if bhv_files_count >= 2 and messagebox.askyesno(WINDOW_TITLE, BEHAVIOR_ASK_YES_NO_MESSAGE):
+        if bhv_files_count >= 2 and messagebox.askyesno(WINDOW_TITLE, TEXT_BEHAVIOR_ASK_YES_NO_MESSAGE):
             behavior_data_filepath = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "behavior_data.c")
             kwargs["behavior_data_filepath"] = behavior_data_filepath
             try: os.remove(behavior_data_filepath)
@@ -255,13 +257,13 @@ class DynosDecompGUI:
         layout_browser = tk.Frame(self.window, bg="lightgray")
         layout_browser.pack(fill=tk.X)
 
-        label_drop = tk.Label(layout_browser, text="Drop files below...", bg="lightgray", height=1)
+        label_drop = tk.Label(layout_browser, text=TEXT_DROP_FILES_BELOW, bg="lightgray", height=1)
         label_drop.pack(side=tk.LEFT, padx=10, pady=5)
 
-        self.button_browse = tk.Button(layout_browser, text="Browse file", command=lambda: self.open_file_explorer())
+        self.button_browse = tk.Button(layout_browser, text=TEXT_BROWSE_FILE_1, command=lambda: self.open_file_explorer())
         self.button_browse.pack(side=tk.RIGHT, padx=(5, 10), pady=5)
 
-        label_browse = tk.Label(layout_browser, text="...or browse file:", bg="lightgray", height=1)
+        label_browse = tk.Label(layout_browser, text=TEXT_BROWSE_FILE_2, bg="lightgray", height=1)
         label_browse.pack(side=tk.RIGHT)
 
         # File list
@@ -297,18 +299,23 @@ class DynosDecompGUI:
         layout_buttons_clear.grid(row=0, column=2, sticky=tk.E)
 
         font_decomp = font.Font(size=10, weight=font.BOLD)
-        self.button_decomp = tk.Button(layout_center, text="Decomp files", width=15, height=2, font=font_decomp, command=lambda: self.decomp_files())
+        self.button_decomp = tk.Button(layout_center, text=TEXT_DECOMP_FILES, width=15, height=2, font=font_decomp, command=lambda: self.decomp_files())
         self.button_decomp.grid(row=0, column=1)
 
         self.check_match_name = tk.BooleanVar(layout_options, True)
-        self.checkbox_match_name = tk.Checkbutton(layout_options, text="Match input name", variable=self.check_match_name)
+        self.checkbox_match_name = tk.Checkbutton(layout_options, text=TEXT_MATCH_INPUT_NAME, variable=self.check_match_name)
         self.checkbox_match_name.grid(row=0, column=0, sticky=tk.W, padx=(10, 0), pady=(0, 0))
-        ToolTip(self.checkbox_match_name, msg="Make the object name match the input filename.\nFor example, if the input filename is \"mario_geo.bin\",\nthe root geo layout name will be \"mario_geo\".")
+        ToolTip(self.checkbox_match_name, msg=TEXT_MATCH_INPUT_NAME_DESC)
 
-        self.button_clear_files = tk.Button(layout_buttons_clear, text="Clear files", command=lambda: self.clear_files())
+        self.check_advanced_mode = tk.BooleanVar(layout_options, False)
+        self.checkbox_advanced_mode = tk.Checkbutton(layout_options, text=TEXT_ADVANCED_MODE, variable=self.check_advanced_mode)
+        self.checkbox_advanced_mode.grid(row=1, column=0, sticky=tk.W, padx=(10, 0), pady=(0, 0))
+        ToolTip(self.checkbox_advanced_mode, msg=TEXT_ADVANCED_MODE_DESC)
+
+        self.button_clear_files = tk.Button(layout_buttons_clear, text=TEXT_CLEAR_FILES, command=lambda: self.clear_files())
         self.button_clear_files.grid(row=0, column=0, sticky=tk.E, padx=(0, 10), pady=(5, 5))
 
-        self.button_clear_output = tk.Button(layout_buttons_clear, text="Clear output", command=lambda: self.clear_output())
+        self.button_clear_output = tk.Button(layout_buttons_clear, text=TEXT_CLEAR_OUTPUT, command=lambda: self.clear_output())
         self.button_clear_output.grid(row=1, column=0, sticky=tk.E, padx=(0, 10), pady=(5, 5))
 
         # Output log

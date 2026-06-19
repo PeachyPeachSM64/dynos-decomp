@@ -4,6 +4,7 @@ from .consts.dynosbin import DYNOSBIN
 from .consts.types import DATA_TYPES_ACTOR, DATA_TYPES_TEXTURE, DATA_TYPES_BEHAVIOR, DATA_TYPES_COLLISION, DATA_TYPES_LEVEL
 from .gfxdata import GfxData
 from .write import geolayouts, displaylists, animations, behaviors, collisions
+from .globals import *
 
 
 def is_compressed(data: bytes) -> bool:
@@ -48,7 +49,7 @@ def get_raw_data(filepath: str, create_dir: bool = False, ext: str|None = None, 
 
 
 def decomp_actor(filepath: str, **kwargs):
-    match_name = kwargs.get("match_name", False)
+    global g_options
     data, dirpath = get_raw_data(filepath, True, ".bin", lambda dirpath: dirpath[:-4] if dirpath.endswith("_geo") else dirpath)
     model_name = dirpath.split("/")[-1]
     gfxdata = GfxData.read(data, DATA_TYPES_ACTOR)
@@ -67,7 +68,7 @@ def decomp_actor(filepath: str, **kwargs):
     prints.info("")
 
     gfxdata.write_model_inc_c(dirpath, model_name)
-    gfxdata.write_geo_inc_c(dirpath, (model_name + "_geo") if match_name else None)
+    gfxdata.write_geo_inc_c(dirpath, (model_name + "_geo") if g_options.get(OPT_MATCH_INPUT_NAME) else None)
     gfxdata.write_animations(dirpath)
     gfxdata.write_animation_table(dirpath)
     prints.info("")

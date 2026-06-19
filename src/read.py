@@ -1,7 +1,16 @@
 import struct
 from .consts.pointers import FUNC, PNTR, LUAV
 from .consts.functions import FUNCTION_NAMES
+from .globals import *
 from . import prints
+
+ORD_a = ord('a')
+ORD_z = ord('z')
+ORD_A = ord('A')
+ORD_Z = ord('Z')
+ORD_0 = ord('0')
+ORD_9 = ord('9')
+ORD_UNDERSCORE = ord('_')
 
 
 def read_u8(buffer: bytes, index: int) -> int:
@@ -33,8 +42,19 @@ def read_f32(buffer: bytes, index: int) -> float:
 
 
 def read_name(buffer: bytes, index: int) -> tuple[str, int]:
+    global g_options
     length = read_u8(buffer, index)
-    return buffer[index + 1:index + 1 + length].decode("utf-8"), index + 1 + length
+    if not g_options.get(OPT_ADVANCED_MODE):
+        return buffer[index + 1:index + 1 + length].decode("utf-8"), index + 1 + length
+
+    # [Advanced mode] ignore length, read name until invalid char
+    def valid_char(c):
+        return (c >= ORD_a and c <= ORD_z) or (c >= ORD_A and c <= ORD_Z) or (c >= ORD_0 and c <= ORD_9) or (c == ORD_UNDERSCORE)
+    index += 1
+    index_start = index
+    while index < len(buffer) and valid_char(buffer[index]):
+        index += 1
+    return buffer[index_start:index].decode("utf-8"), index
 
 
 def read_buffer(buffer: bytes, index: int, read_length_func, read_data_func) -> tuple[list, int]:
